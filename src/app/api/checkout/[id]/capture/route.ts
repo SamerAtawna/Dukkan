@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { badRequest, handler, json } from "@/lib/server/http";
-import { captureOrder, completedCapture, getOrder as getPayPalOrder, PayPalError, type PayPalOrder } from "@/lib/server/paypal";
+import { buyerOf, captureOrder, completedCapture, getOrder as getPayPalOrder, PayPalError, type PayPalOrder } from "@/lib/server/paypal";
 import { getOrderForBuyer, markPaid } from "@/lib/server/store";
 import type { Order } from "@/lib/types";
 
@@ -31,14 +31,13 @@ export const POST = handler(async (req: NextRequest, { params }: { params: Promi
     return json({ order: forBuyer(order), pending: true, paypalStatus: pp.status }, { status: 202 });
   }
 
-  const unit = pp.purchase_units?.[0];
-  const name = pp.payer?.name;
+  const buyer = buyerOf(pp);
   const paid = await markPaid(id, {
     captureId: capture.id,
-    buyerName: unit?.shipping?.name?.full_name ?? [name?.given_name, name?.surname].filter(Boolean).join(" ") ?? null,
-    buyerEmail: pp.payer?.email_address ?? null,
-    shipping: unit?.shipping ?? null,
-    paidAt: capture.create_time,
+    buyerName: buyer.name,
+    buyerEmail: buyer.email,
+    shipping: buyer.shipping,
+    paidAt: capture.createTime,
   });
   return json({ order: forBuyer(paid) });
 });
