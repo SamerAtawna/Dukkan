@@ -52,6 +52,18 @@ export function useRecorder(initial: DraftStage, onDone?: (transcript: string, l
     meter.current = null;
   }, []);
 
+  /** The mic's loudness right now (RMS, about 0 to 0.3 for speech), or null when it cannot be metered. */
+  const levelBuf = useRef<Float32Array<ArrayBuffer> | null>(null);
+  const level = useCallback((): number | null => {
+    const m = meter.current;
+    if (!m) return null;
+    const buf = levelBuf.current ?? (levelBuf.current = new Float32Array(m.analyser.fftSize));
+    m.analyser.getFloatTimeDomainData(buf);
+    let sum = 0;
+    for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
+    return Math.sqrt(sum / buf.length);
+  }, []);
+
   /** Share of metered frames that were clearly above the noise floor. */
   const spokenShare = useCallback(() => {
     const m = meter.current;
@@ -205,16 +217,69 @@ export function useRecorder(initial: DraftStage, onDone?: (transcript: string, l
     [clear, releaseMic]
   );
 
-  return { stage, secs, error, start, stop, again, typeInstead, submitTyped };
+  return { stage, secs, error, start, stop, again, typeInstead, submitTyped, level };
+}
+
+/** How often the waveform takes a new sample; between samples the bars ease toward their targets. */
+const WAVE_STEP_MS = 70;
+
+/**
+ * Drives the waveform from the real mic level while recording: a scrolling history, newest sample
+ * on the right, written straight to each bar's transform (no React state per frame). Purpose:
+ * feedback that the mic hears the seller. Without metering, or with reduced motion, the CSS
+ * fallback stays (a decorative bounce, or still bars).
+ */
+function useLiveWave(rec: boolean, level: () => number | null, count: number) {
+  const wave = useRef<HTMLDivElement>(null);
+  const [driven, setDriven] = useState(false);
+
+  useEffect(() => {
+    if (!rec || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const bars = Array.from(wave.current?.children ?? []) as HTMLElement[];
+    const history = new Array<number>(count).fill(0);
+    const shown = new Array<number>(count).fill(0);
+    let raf = 0;
+    let last = 0;
+    let started = false;
+    const frame = (now: number) => {
+      raf = requestAnimationFrame(frame);
+      const rms = level();
+      if (rms === null) return;
+      if (!started) {
+        started = true;
+        setDriven(true);
+      }
+      if (now - last >= WAVE_STEP_MS) {
+        last = now;
+        // Speech sits around 0.02–0.2 RMS; the square root keeps quiet voices visible.
+        const v = Math.sqrt(Math.min(1, Math.max(0, rms - 0.004) / 0.16));
+        history.shift();
+        history.push(v);
+      }
+      for (let i = 0; i < bars.length; i++) {
+        shown[i] += (history[i] - shown[i]) * 0.35;
+        bars[i].style.transform = `scaleY(${(0.18 + 0.82 * shown[i]).toFixed(3)})`;
+      }
+    };
+    raf = requestAnimationFrame(frame);
+    return () => {
+      cancelAnimationFrame(raf);
+      setDriven(false);
+      for (const b of bars) b.style.transform = "";
+    };
+  }, [rec, level, count]);
+
+  return { wave, driven };
 }
 
 type Props = ReturnType<typeof useRecorder>;
 
 /** Idle + recording: the big mic, ripple rings, waveform and the "Type instead" escape. */
-export function RecordStage({ stage, secs, start, stop, typeInstead }: Props) {
+export function RecordStage({ stage, secs, start, stop, typeInstead, level }: Props) {
   const desktop = useMedia(DESKTOP);
   const rec = stage === "recording";
   const bars = desktop ? 36 : 28;
+  const { wave, driven } = useLiveWave(rec, level, bars);
 
   return (
     <div
@@ -249,7 +314,7 @@ export function RecordStage({ stage, secs, start, stop, typeInstead }: Props) {
           </div>
         </div>
         <div className="txt recTxt" aria-live="polite">
-          <div className="wave live" aria-hidden="true">
+          <div ref={wave} className={cn("wave live", driven && "driven")} aria-hidden="true">
             {Array.from({ length: bars }, (_, i) => (
               <span key={i} className="bar" />
             ))}

@@ -22,6 +22,24 @@ export function CameraIcon({ size = 24, ...rest }: IconProps) {
   );
 }
 
+export function CrossIcon({ size = 12, ...rest }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={3}
+      strokeLinecap="round"
+      aria-hidden="true"
+      {...rest}
+    >
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}
+
 export function UploadIcon({ size = 24, ...rest }: IconProps) {
   return (
     <svg

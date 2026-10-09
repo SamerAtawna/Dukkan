@@ -83,6 +83,9 @@
       transform: rotateX(8deg) rotateY(-12deg); transition: transform 600ms var(--ease-in-out);
       animation: ob-deal 0.55s var(--ease-out) 0.28s backwards;
     }
+    /* The deal's fade lives on the flat faces, never on .flip: opacity on a preserve-3d element
+       flattens it, and the hidden face shows through mirrored until the fade ends. */
+    .side { animation: ob-fadeonly 0.3s var(--ease-out) 0.28s backwards; }
     .flip.on { transform: rotateX(8deg) rotateY(168deg); }
     .side {
       position: absolute; inset: 0; border-radius: 24px; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden;
@@ -98,6 +101,16 @@
     .frontS .sheen { background: linear-gradient(105deg, transparent 35%, rgba(0, 112, 224, 0.12) 50%, transparent 65%); }
     .flip.busy .frontS .sheen { animation: ob-sheen 1.3s linear infinite; }
     .flip.on .backS .sheen { animation: ob-sheen 700ms var(--ease-out) 300ms 1 both; }
+    /* Waiting for the shop: the deal is paused on its first frame (faces at opacity 0) and the shadow hidden.
+       If the data came after the deal's 0.28s delay, deal at once rather than adding the delay. */
+    .lift.wait .flip, .lift.wait .side { animation-play-state: paused; }
+    .ground { transition: opacity 200ms var(--ease-out); }
+    .lift.wait .ground { opacity: 0; }
+    .lift.late .flip, .lift.late .side { animation-delay: 0s; }
+    /* Connected before this visit: dealt onto the back face, already settled. */
+    .lift.settled .flip { animation-name: ob-deal-back; transition: none; }
+    .lift.settled.on, .lift.settled .ground, .lift.settled .backS .sheen, .lift.settled .check::after { animation: none; }
+    .lift.settled .c1, .lift.settled .c2, .lift.settled .c3, .lift.settled .check { opacity: 1; transform: none; transition: none; }
     .c1, .c2, .c3 { opacity: 0; transform: translateY(6px); transition: opacity 250ms var(--ease-out), transform 250ms var(--ease-out); }
     .flip.on .c1 { opacity: 1; transform: none; transition-delay: 300ms; }
     .flip.on .c2 { opacity: 1; transform: none; transition-delay: 360ms; }
@@ -134,6 +147,8 @@
       &.ob-3 .a3 .agIn, &.ob-3 .a3 .agsh { animation: none; opacity: 1; }
       .lift.on, .lift.on .ground, .flip, .flip.busy .frontS .sheen, .flip.on .backS .sheen, .on .check::after { animation: none; }
       .flip { opacity: 1; }
+      .side { animation: none; }
+      .lift.wait .side { opacity: 0; }
       .c1, .c2, .c3 { transform: none; transition: opacity 200ms var(--ease-out); }
       .flip, .flip.on { transition: none; transform: none; }
       .side { transition: opacity 200ms var(--ease-out); }
@@ -159,6 +174,7 @@
 @keyframes ob-lift { 0% { transform: none; } 25% { transform: translateY(-9px) scale(1.02); } 50% { transform: translateY(-12px) scale(1.03); } 75% { transform: translateY(-9px) scale(1.02); } 100% { transform: none; } }
 @keyframes ob-groundlift { 0% { transform: translateZ(-1px) scale(1); opacity: 1; } 50% { transform: translateZ(-1px) scale(0.86); opacity: 0.55; } 100% { transform: translateZ(-1px) scale(1); opacity: 1; } }
 @keyframes ob-sheen { to { transform: translateX(120%); } }
-@keyframes ob-deal { from { opacity: 0; transform: translateY(18px) rotateX(18deg) rotateY(-22deg); } to { opacity: 1; transform: rotateX(8deg) rotateY(-12deg); } }
+@keyframes ob-deal-back { from { transform: translateY(18px) rotateX(18deg) rotateY(158deg); } to { transform: rotateX(8deg) rotateY(168deg); } }
+@keyframes ob-deal { from { transform: translateY(18px) rotateX(18deg) rotateY(-22deg); } to { transform: rotateX(8deg) rotateY(-12deg); } }
 @keyframes ob-ping { from { transform: scale(1); opacity: 0.9; } to { transform: scale(2.4); opacity: 0; } }
 @keyframes ob-spin { to { transform: rotate(360deg); } }

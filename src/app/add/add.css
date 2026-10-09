@@ -11,11 +11,18 @@
       box-shadow: 0 1px 0 #fff inset, 0 12px 24px -14px rgba(16, 19, 26, 0.22);
       position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;
     }
-    .tile.photo { background: #efe7d6; }
+    /* A new photo settles in (200ms); removal stays instant, exits faster than entrances. */
+    .tile.photo {
+      background: #efe7d6; transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+      @starting-style { opacity: 0; transform: scale(0.97); }
+    }
     .tile.add {
       border: 1.5px dashed #c9cec3; background: transparent; box-shadow: none; cursor: pointer; color: var(--color-text-2);
-      flex-direction: column; gap: 6px; font: 500 0.75rem var(--font-body); transition: transform 160ms var(--ease-out);
+      flex-direction: column; gap: 6px; font: 500 0.75rem var(--font-body);
+      transition: transform 160ms var(--ease-out), border-color 150ms ease, background-color 150ms ease, color 150ms ease;
     }
+    /* A file dragged over the drop tile: it lights up so the seller knows letting go will work. */
+    .tile.add.over { border-color: var(--color-lime-ink); background: rgba(200, 255, 77, 0.12); color: var(--color-lime-ink); }
     .tile.add:active { transform: scale(0.97); }
     .tile:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
     .tile .n { position: absolute; left: 10px; top: 8px; color: var(--color-saffron-ink); }
@@ -41,7 +48,7 @@
     .ring { position: absolute; left: 50%; top: 50%; width: 116px; height: 116px; margin: -58px 0 0 -58px; border-radius: 50%; border: 2px solid rgba(140, 200, 40, 0.7); opacity: 0; pointer-events: none; }
     .rec .ring { animation: add-ripple 1.8s var(--ease-out) infinite; }
     .rec .bigmic::after { animation: none; opacity: 0; }
-    .r2 { animation-delay: 0.6s; } .r3 { animation-delay: 1.2s; }
+    .rec .ring.r2 { animation-delay: 0.6s; } .rec .ring.r3 { animation-delay: 1.2s; }
     @media (min-width: 768px) {
       .stage { min-height: 0; }
       .bigmic {
@@ -75,6 +82,7 @@
     .bar { width: 3px; border-radius: 2px; background: var(--color-live); height: 8px; transform-origin: center; flex: none; }
     .wave.live .bar { height: 34px; transform: scaleY(0.18); }
     .rec .wave.live .bar { animation: add-bounce 0.8s var(--ease-in-out) infinite alternate; }
+    .rec .wave.live.driven .bar { animation: none; }
     .bar:nth-child(2n) { animation-delay: 0.1s; }
     .bar:nth-child(3n) { animation-delay: 0.25s; animation-duration: 0.95s; }
     .bar:nth-child(5n) { animation-delay: 0.4s; animation-duration: 0.7s; }
@@ -158,6 +166,7 @@
       .ring { display: none; }
       .bigmic::after { animation: none; opacity: 0.6; transform: none; }
       .rec .wave.live .bar { animation: none; transform: scaleY(0.5); }
+      .tile.photo { transition: opacity 200ms var(--ease-out); @starting-style { transform: none; } }
       .reveal { animation: add-fadein 0.2s var(--ease-out) both; }
       .wd { animation-name: add-fadein; }
       .inr { animation: add-fadein 0.2s var(--ease-out) both; }
@@ -239,3 +248,4 @@
   @keyframes add-popin { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: none; } }
   @keyframes add-fadeout { to { opacity: 0; } }
 }
+

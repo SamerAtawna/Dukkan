@@ -4,7 +4,7 @@ import { useRef, useState, type DragEvent } from "react";
 import { cn } from "@/lib/cn";
 import { fileToDataUrl } from "@/lib/image";
 import { useDraft } from "@/lib/store-draft";
-import { CameraIcon, UploadIcon } from "@/components/add/icons";
+import { CameraIcon, CrossIcon, UploadIcon } from "@/components/add/icons";
 
 const MAX_PHOTOS = 4;
 
@@ -44,19 +44,22 @@ export function PhotoGrid() {
   return (
     <div className="flex flex-col gap-2.5 md:gap-3">
       <div className="mono">Photos</div>
-      <div className="grid grid-cols-3 gap-2.5 md:grid-cols-[repeat(auto-fit,minmax(min(140px,100%),1fr))] md:gap-3.5">
+      <div className="grid grid-cols-3 gap-2.5 md:grid-cols-[repeat(auto-fill,minmax(min(140px,100%),1fr))] md:gap-3.5">
         {photos.map((p, i) => (
           <div key={p.url} className="tile photo relative overflow-hidden" role="img" aria-label={p.label}>
             {/* eslint-disable-next-line @next/next/no-img-element -- just-taken photos are data URLs */}
             <img src={p.url} alt="" className="absolute inset-0 h-full w-full object-cover" />
-            <span className="mono n relative">{i + 1}</span>
+            <span className="mono n">{i + 1}</span>
+            {/* 44px hit area in the corner; the visible chip stays 28px. */}
             <button
               type="button"
-              className="press absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(16,19,26,.7)] text-sm leading-none text-white"
+              className="press absolute right-0 top-0 inline-flex h-11 w-11 items-center justify-center"
               aria-label={`Remove photo ${i + 1}`}
               onClick={() => removePhoto(p.url)}
             >
-              ×
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(16,19,26,.7)] text-white">
+                <CrossIcon />
+              </span>
             </button>
           </div>
         ))}

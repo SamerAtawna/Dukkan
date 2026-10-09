@@ -37,6 +37,11 @@ export default function PaypalPage() {
   const stage: Stage = loaded && paypalEmail && localStage !== "busy" ? "done" : localStage;
   const on = stage === "done";
   const busy = stage === "busy";
+  // The card and the button wait for the shop, so a connected account is never dealt as "Not
+  // connected" and then flipped. Connected before this visit = `settled`: dealt onto its back face
+  // with no flip, lift, sheen or ping; those celebrate a connection made here, not one found.
+  const [cold] = useState(() => !useShop.getState().loaded);
+  const settled = on && localStage === "idle";
 
   async function connect() {
     if (busy || on) return;
@@ -87,7 +92,7 @@ export default function PaypalPage() {
       </p>
 
       <div className="stage" aria-live="polite">
-        <div className={cn("lift", on && "on")}>
+        <div className={cn("lift", on && "on", !loaded && "wait", cold && "late", settled && "settled")}>
           <span className="ground" aria-hidden="true" />
           <div className={cn("flip", on && "on", busy && "busy")}>
             <div className="side frontS" aria-hidden={on}>
@@ -140,11 +145,13 @@ export default function PaypalPage() {
 
       <div className="flex-1" />
 
-      {!on ? (
+      {!loaded ? (
+        <div className="min-h-14" aria-hidden="true" />
+      ) : !on ? (
         <Button
           tone="lime"
           size="big"
-          className={cn("relative w-full", busy && "busy")}
+          className={cn("relative w-full", busy && "busy", cold && "fade")}
           onClick={connect}
           aria-busy={busy}
           aria-disabled={busy}
@@ -162,12 +169,16 @@ export default function PaypalPage() {
           <ArrowRightIcon size={18} strokeWidth={2.4} />
         </ButtonLink>
       )}
-      {on ? (
+      {!loaded ? (
+        <span className="ob-later later invisible" aria-hidden="true">
+          Do this later
+        </span>
+      ) : on ? (
         <button type="button" className="ob-later later fade cursor-pointer border-0 bg-transparent font-body" onClick={() => void disconnect()} disabled={disconnecting}>
           {disconnecting ? "Disconnecting…" : "Disconnect PayPal"}
         </button>
       ) : (
-        <Link href="/onboarding/open" className="ob-later later">
+        <Link href="/onboarding/open" className={cn("ob-later later", cold && "fade")}>
           Do this later
         </Link>
       )}
