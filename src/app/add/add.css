@@ -1,0 +1,241 @@
+/* Route CSS for /add and /add/review, ported from Add / DesktopAdd / Review / DesktopReview.dc.html.
+   Everything is nested under .r-add so nothing leaks into other routes. */
+@layer components {
+  .r-add {
+    .col { gap: 20px; }
+    @media (min-width: 768px) { .col { padding: 32px 24px 64px; gap: 28px; } }
+
+    /* ---------- Photo tiles ---------- */
+    .tile {
+      aspect-ratio: 1; border-radius: 18px; border: 1px solid var(--color-border); background: var(--color-surface);
+      box-shadow: 0 1px 0 #fff inset, 0 12px 24px -14px rgba(16, 19, 26, 0.22);
+      position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;
+    }
+    .tile.photo { background: #efe7d6; }
+    .tile.add {
+      border: 1.5px dashed #c9cec3; background: transparent; box-shadow: none; cursor: pointer; color: var(--color-text-2);
+      flex-direction: column; gap: 6px; font: 500 0.75rem var(--font-body); transition: transform 160ms var(--ease-out);
+    }
+    .tile.add:active { transform: scale(0.97); }
+    .tile:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+    .tile .n { position: absolute; left: 10px; top: 8px; color: var(--color-saffron-ink); }
+    @media (min-width: 768px) {
+      .tile { border-radius: 22px; box-shadow: 0 1px 0 #fff inset, 0 14px 28px -14px rgba(16, 19, 26, 0.22); }
+      .tile.add { gap: 8px; font-size: 0.8125rem; }
+      .tile .n { left: 14px; top: 12px; }
+    }
+
+    /* ---------- The big mic + rings (idle breathes, recording ripples) ---------- */
+    .stage { min-height: 320px; }
+    .bigmic {
+      width: 116px; height: 116px; border-radius: 50%; border: 0; display: inline-flex; align-items: center; justify-content: center;
+      color: #1c3300; cursor: pointer; position: relative;
+      background: radial-gradient(circle at 35% 28%, #edffa6 0%, #c8ff4d 45%, #9fd92a 100%);
+      box-shadow: 0 3px 0 rgba(255, 255, 255, 0.9) inset, 0 -12px 22px rgba(70, 110, 0, 0.22) inset, 0 28px 48px -18px rgba(120, 190, 20, 0.75);
+      transition: transform 160ms var(--ease-out);
+    }
+    .bigmic:active { transform: scale(0.96); }
+    .bigmic:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+    .bigmic::after { content: ""; position: absolute; inset: -14px; border-radius: 50%; border: 2px solid rgba(160, 220, 50, 0.6); animation: add-breathe 2.8s ease-in-out infinite; }
+    .micwrap { position: relative; width: 116px; height: 116px; }
+    .ring { position: absolute; left: 50%; top: 50%; width: 116px; height: 116px; margin: -58px 0 0 -58px; border-radius: 50%; border: 2px solid rgba(140, 200, 40, 0.7); opacity: 0; pointer-events: none; }
+    .rec .ring { animation: add-ripple 1.8s var(--ease-out) infinite; }
+    .rec .bigmic::after { animation: none; opacity: 0; }
+    .r2 { animation-delay: 0.6s; } .r3 { animation-delay: 1.2s; }
+    @media (min-width: 768px) {
+      .stage { min-height: 0; }
+      .bigmic {
+        width: 136px; height: 136px;
+        box-shadow: 0 3px 0 rgba(255, 255, 255, 0.9) inset, 0 -14px 26px rgba(70, 110, 0, 0.22) inset, 0 32px 56px -20px rgba(120, 190, 20, 0.75);
+      }
+      .bigmic::after { inset: -16px; }
+      .micwrap { width: 136px; height: 136px; }
+      .ring { width: 136px; height: 136px; margin: -68px 0 0 -68px; }
+    }
+
+    /* mic ↔ stop glyph swap */
+    .ico { position: absolute; transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out); }
+    .ico-stop { width: 34px; height: 34px; border-radius: 8px; background: #1c3300; opacity: 0; transform: scale(0.8); }
+    .rec .ico-mic { opacity: 0; transform: scale(0.8); }
+    .rec .ico-stop { opacity: 1; transform: none; }
+    @media (min-width: 768px) { .ico-stop { width: 40px; height: 40px; border-radius: 10px; } }
+
+    /* idle ↔ listening copy crossfade */
+    .txtwrap { position: relative; width: 100%; max-width: 360px; height: 96px; }
+    .txt { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; transition: opacity 200ms var(--ease-out); }
+    .recTxt { opacity: 0; }
+    .rec .idleTxt { opacity: 0; }
+    .rec .recTxt { opacity: 1; }
+    .alt { transition: opacity 200ms var(--ease-out); }
+    .rec .alt { opacity: 0; pointer-events: none; }
+    @media (min-width: 768px) { .txt { gap: 8px; } }
+
+    /* ---------- Waveform ---------- */
+    .wave { display: flex; align-items: center; justify-content: center; gap: 3px; height: 36px; }
+    .bar { width: 3px; border-radius: 2px; background: var(--color-live); height: 8px; transform-origin: center; flex: none; }
+    .wave.live .bar { height: 34px; transform: scaleY(0.18); }
+    .rec .wave.live .bar { animation: add-bounce 0.8s var(--ease-in-out) infinite alternate; }
+    .bar:nth-child(2n) { animation-delay: 0.1s; }
+    .bar:nth-child(3n) { animation-delay: 0.25s; animation-duration: 0.95s; }
+    .bar:nth-child(5n) { animation-delay: 0.4s; animation-duration: 0.7s; }
+    .bar:nth-child(7n) { animation-delay: 0.15s; animation-duration: 1.1s; }
+    .still .bar:nth-child(2n) { height: 14px; }
+    .still .bar:nth-child(3n) { height: 22px; }
+    .still .bar:nth-child(5n) { height: 30px; }
+    .still .bar:nth-child(7n) { height: 18px; }
+    .still .bar:nth-child(11n) { height: 10px; }
+    .still .bar { transition: background-color 120ms linear; }
+    .still .bar.played { background: var(--color-lime-ink); }
+    @media (min-width: 768px) {
+      .wave { gap: 4px; height: 40px; }
+      .wave.live .bar { height: 38px; transform: scaleY(0.16); }
+    }
+
+    /* Play button on the voice-note pill (lime clay) */
+    .play {
+      border: 0; color: #1c3300;
+      background: radial-gradient(circle at 35% 28%, #edffa6 0%, #c8ff4d 45%, #9fd92a 100%);
+      box-shadow: 0 2px 0 rgba(255, 255, 255, 0.85) inset, 0 -5px 10px rgba(70, 110, 0, 0.2) inset, 0 10px 20px -8px rgba(120, 190, 20, 0.7);
+    }
+
+    /* ---------- Stage transitions ---------- */
+    .fade { animation: add-fadein 0.2s var(--ease-out) both; }
+    .reveal { animation: add-revealin 0.45s var(--ease-out) both; }
+    .wd { display: inline-block; opacity: 0; animation: add-wordin 0.3s var(--ease-out) forwards; }
+    .livedot::before { animation-duration: 1.6s; }
+
+    /* ---------- Review ---------- */
+    .thumb {
+      width: 84px; height: 84px; flex: none; border-radius: 20px; background: #efe7d6; border: 1px solid var(--color-border);
+      display: flex; align-items: center; justify-content: center;
+      transform: perspective(500px) rotateY(-14deg) rotateX(6deg);
+      box-shadow: 0 1px 0 #fff inset, 14px 18px 30px -16px rgba(16, 19, 26, 0.35);
+    }
+    .inr { animation: add-inr 0.4s var(--ease-out) both; }
+    /* Inline editable line: borderless, dashed underline on hover/focus. (Not the global .field input.) */
+    .edit {
+      display: block; width: 100%; box-sizing: border-box; border: 0; border-bottom: 1px dashed transparent; border-radius: 0;
+      background: transparent; padding: 0 0 2px; margin: 0; color: inherit; font: inherit; resize: none; transition: border-color 180ms ease;
+    }
+    @media (hover: hover) and (pointer: fine) { .edit:hover { border-bottom-color: #c9cec3; } }
+    .edit:focus { outline: none; border-bottom-color: var(--color-focus); }
+    .qty {
+      box-sizing: border-box; height: 52px; border-radius: 16px; border: 1px solid #e3c98f; background: var(--color-surface);
+      padding: 0 16px; font: 500 1.125rem var(--font-body); color: var(--color-text); outline: none; min-width: 0;
+    }
+    .qty::placeholder { color: var(--color-text-3); font-weight: 400; }
+    .qty:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+    .q { border-radius: 24px; }
+    /* Listing card: grid areas so the thumbnail sits beside title/price on phone and spans the column on desktop. */
+    .listing {
+      display: grid; gap: 16px; align-items: start;
+      grid-template-columns: 84px minmax(0, 1fr);
+      grid-template-areas: "thumb title" "thumb price" "details details" "desc desc";
+    }
+    .listing > .a-thumb { grid-area: thumb; }
+    .listing > .a-title { grid-area: title; }
+    .listing > .a-price { grid-area: price; }
+    .listing > .a-details { grid-area: details; }
+    .listing > .a-desc { grid-area: desc; }
+    .listing > .a-title, .listing > .a-price { gap: 4px; }
+    @media (min-width: 768px) {
+      .thumb {
+        width: 100%; max-width: 200px; height: auto; aspect-ratio: 1; border-radius: 28px;
+        transform: perspective(700px) rotateY(-14deg) rotateX(6deg);
+        box-shadow: 0 1px 0 #fff inset, 20px 26px 44px -20px rgba(16, 19, 26, 0.35);
+      }
+      .chip { min-height: 34px; padding: 0 12px; font-size: 0.875rem; }
+      .q { border-radius: 28px; }
+      .listing {
+        gap: 22px 32px;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+        grid-template-areas: "thumb title" "thumb price" "thumb details" "thumb desc";
+      }
+      .listing > .a-title, .listing > .a-price { gap: 6px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .ring { display: none; }
+      .bigmic::after { animation: none; opacity: 0.6; transform: none; }
+      .rec .wave.live .bar { animation: none; transform: scaleY(0.5); }
+      .reveal { animation: add-fadein 0.2s var(--ease-out) both; }
+      .wd { animation-name: add-fadein; }
+      .inr { animation: add-fadein 0.2s var(--ease-out) both; }
+    }
+  }
+
+  /* ---------- Publishing: the listing goes into the shop (publish-scene.tsx) ---------- */
+  .r-add {
+    .pub {
+      position: fixed; inset: 0; z-index: 40;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--color-ground);
+      animation: add-fadein 0.2s var(--ease-out) both;
+    }
+    .pub-body {
+      display: flex; flex-direction: column; align-items: stretch; gap: 20px;
+      width: min(100% - 32px, 560px);
+      animation: add-revealin 0.3s var(--ease-out) both;
+    }
+    .pub-stage { position: relative; }
+    .pub-stage .scene { pointer-events: none; }
+    @media (min-width: 768px) { .pub-stage .scene { height: 300px; } }
+
+    /* The listing card hovers above the shop, roughly over the awning. */
+    .pcard {
+      position: absolute; left: 50%; top: 14%;
+      display: flex; align-items: center; gap: 10px;
+      max-width: 240px; padding: 8px 14px 8px 8px; border-radius: 999px;
+      transform: translate(-50%, 0);
+      will-change: transform, opacity;
+    }
+    .pthumb {
+      display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
+      width: 36px; height: 36px; border-radius: 999px; background: #efe7d6; flex: none;
+    }
+    .pthumb img { width: 100%; height: 100%; object-fit: cover; }
+    .ptitle {
+      font-size: 0.8125rem; font-weight: 500; line-height: 1.25;
+      overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+    .pcard.float { animation: add-float 1.6s var(--ease-in-out) infinite; }
+    /* Into the door: moves on screen, so ease-in-out; shrinks towards the right of the front face. */
+    .pcard.in { animation: add-into 0.45s var(--ease-in-out) forwards; }
+    @media (min-width: 768px) { .pcard.in { animation-name: add-into-lg; } }
+
+    .pub .scene.nudge .shop-sign { animation: add-signpop 0.4s var(--ease-out) 1; }
+
+    .pub-copy { display: flex; flex-direction: column; align-items: center; gap: 14px; min-height: 96px; text-align: center; }
+    .pub-h { margin: 0; font-size: 1.625rem; line-height: 1.2; font-weight: 500; letter-spacing: -0.02em; }
+    @media (min-width: 768px) { .pub-h { font-size: 2.125rem; line-height: 1.15; } }
+    .pub .w { animation-delay: 0.5s; }
+    .pub .w.d2 { animation-delay: 0.54s; } .pub .w.d3 { animation-delay: 0.58s; } .pub .w.d4 { animation-delay: 0.62s; }
+    .pub-pill {
+      display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 8px 12px 8px 10px;
+      animation: add-popin 0.3s var(--ease-out) 0.7s both;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .pub, .pub-body { animation: add-fadein 0.2s linear both; }
+      .pcard.float { animation: none; }
+      .pcard.in { animation: add-fadeout 0.2s linear forwards; }
+      .pub .scene.nudge .shop-sign { animation: none; }
+      .pub-pill { animation: add-fadein 0.2s linear 0.4s both; }
+    }
+  }
+
+
+  @keyframes add-breathe { 0%, 100% { transform: scale(0.9); opacity: 0.2; } 50% { transform: scale(1.06); opacity: 0.9; } }
+  @keyframes add-ripple { from { transform: scale(1); opacity: 0.8; } to { transform: scale(2.3); opacity: 0; } }
+  @keyframes add-bounce { from { transform: scaleY(0.18); } to { transform: scaleY(1); } }
+  @keyframes add-fadein { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes add-revealin { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes add-wordin { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @keyframes add-inr { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @keyframes add-float { 0%, 100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -5px); } }
+  @keyframes add-into { from { transform: translate(-50%, 0) scale(1); opacity: 1; } 60% { opacity: 1; } to { transform: translate(-32%, 118px) scale(0.28); opacity: 0; } }
+  @keyframes add-into-lg { from { transform: translate(-50%, 0) scale(1); opacity: 1; } 60% { opacity: 1; } to { transform: translate(-24%, 176px) scale(0.28); opacity: 0; } }
+  @keyframes add-signpop { 0%, 100% { transform: none; } 35% { transform: scale(1.08); } }
+  @keyframes add-popin { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: none; } }
+  @keyframes add-fadeout { to { opacity: 0; } }
+}

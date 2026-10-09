@@ -1,0 +1,32 @@
+/* In-app banner — ported from Notification.dc.html (kind 3) */
+@layer components {
+  .r-banner {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px 10px 10px; border-radius: 999px;
+    width: 100%; box-sizing: border-box;
+  }
+  .r-banner .appicon {
+    width: 32px; height: 32px; border-radius: 50%; flex: none;
+    background: radial-gradient(circle at 35% 25%, #edffa6 0%, #c8ff4d 50%, #9fd92a 100%);
+    color: #1c3300; display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-hd); font-weight: 600; font-size: 0.875rem;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 -4px 8px rgba(70, 110, 0, 0.2) inset;
+  }
+
+  /* Standalone use: enters from the top in 400ms ease. Inside Sonner the toaster animates instead. */
+  .r-banner.banner { animation: bannerin 400ms ease both; }
+  @keyframes bannerin { from { opacity: 0; transform: translateY(-100%); } to { opacity: 1; transform: none; } }
+  @keyframes bannerfade { from { opacity: 0; } to { opacity: 1; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .r-banner.banner { animation: bannerfade 0.2s var(--ease-out) both; transform: none; }
+  }
+}
+
+/* When the banner is a Sonner toast, the toast <li> carries the global pill styling from
+   layout.tsx. Strip it so the banner's own 10/12px pill is the visible surface. Unlayered on
+   purpose: it must beat the utility classes on the <li>. Scoped by :has(), so nothing else is touched. */
+[data-sonner-toast]:has(.r-banner) {
+  background: transparent; border: 0; box-shadow: none; padding: 0; border-radius: 999px;
+  width: min(356px, calc(100vw - 32px));
+}

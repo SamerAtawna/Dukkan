@@ -1,0 +1,158 @@
+/* Onboarding routes: ported from Onboard1/2/3.dc.html + Desktop variants; the shop scene reuses the home hero.
+   Everything is nested under .r-onboarding so nothing leaks into other routes. */
+@layer components {
+  .r-onboarding {
+    /* Page column: phone gap 20px, desktop 32px 24px 64px / gap 24px (overrides the global .col). */
+    .col { gap: 20px; flex: 1; }
+    @media (min-width: 768px) { .col { padding: 32px 24px 64px; gap: 24px; } }
+
+    /* Headline sizes per file. */
+    .ob-h1 { margin: 0; font-size: 1.625rem; line-height: 1.2; font-weight: 500; letter-spacing: -0.02em; text-wrap: pretty; }
+    &.ob-3 .ob-h1 { font-size: 1.75rem; }
+    @media (min-width: 768px) { .ob-h1, &.ob-3 .ob-h1 { font-size: clamp(1.875rem, 5vw, 2.5rem); line-height: 1.15; } }
+
+    /* Reveal: the files use a 300ms 8px fade-up with per-screen delays (overrides the global .in). */
+    .in { animation: ob-fadein 0.3s var(--ease-out) both; }
+    &.ob-1 .i1 { animation-delay: 0.3s; } &.ob-1 .i2 { animation-delay: 0.36s; } &.ob-1 .i3 { animation-delay: 0.42s; }
+    &.ob-2 .i1 { animation-delay: 0.2s; } &.ob-2 .i2 { animation-delay: 0.28s; }
+    &.ob-3 .i1 { animation-delay: 0.75s; } &.ob-3 .i2 { animation-delay: 0.85s; } &.ob-3 .i3 { animation-delay: 0.9s; }
+    /* Onboard3: the headline waits for the shop to light up. */
+    &.ob-3 .d1 { animation-delay: 0.5s; } &.ob-3 .d2 { animation-delay: 0.54s; } &.ob-3 .d3 { animation-delay: 0.58s; } &.ob-3 .d4 { animation-delay: 0.62s; }
+    .fade { animation: ob-fadeonly 0.2s var(--ease-out) both; }
+
+    /* Setup progress bar. */
+    .steps { display: flex; gap: 6px; }
+    .steps span { height: 4px; border-radius: 2px; background: var(--color-border); flex: 1; }
+    .steps .on { background: var(--color-live); }
+
+    /* Welcome field: 18px with a soft shadow (Onboard1). */
+    .field { font-size: 1.125rem; box-shadow: 0 1px 0 #fff inset, 0 8px 18px -12px rgba(16, 19, 26, 0.2); }
+    .field::placeholder { font-weight: 400; }
+
+    /* Language chips also transition colour when selected. */
+    .ob-lang { transition: transform 160ms var(--ease-out), box-shadow 180ms ease, background-color 160ms ease, color 160ms ease, border-color 160ms ease; }
+
+    /* Quiet secondary link under the CTA. */
+    .ob-later { align-self: center; font-size: 0.875rem; color: var(--color-text-2); min-height: 44px; display: inline-flex; align-items: center; padding: 0 12px; }
+    .later { transition: opacity 200ms var(--ease-out); }
+    .later.gone { opacity: 0; pointer-events: none; }
+
+    /* ---------- Shop scene: the hero storefront (globals.css `.scene`), same size as on Home ---------- */
+    .scene { border-radius: 20px; animation: ob-fadeonly 0.3s var(--ease-out) both; }
+    /* A press on the shop: the sign bounces once. */
+    .scene.nudge .shop-sign { animation: ob-signpop 0.4s var(--ease-out) 1; }
+
+    &.ob-3 {
+      .scene { border-radius: 24px; animation: none; }
+      /* Agents arrive one by one after the light, at 1s / 1.07s / 1.14s as Onboard3 times them. */
+      .a1 .agIn { animation-delay: 1s; }
+      .a1 .agsh { animation-delay: 1.15s; }
+      .orbit { animation-delay: 1.07s; }
+      .ctr { animation-delay: 1.07s, 1.07s; }
+      .orbit .agsh { animation-delay: 1.3s; }
+      .a3 .agIn { animation: ob-settle 0.45s var(--ease-out) 1.14s 1 backwards; }
+      .a3 .agsh { animation: ob-fadeonly 0.3s var(--ease-out) 1.3s backwards; }
+      .a1 .say { --sd: 1.9s; } .a3 .say { --sd: 2.4s; }
+      .a1 .eye { animation-delay: 2.1s; } .orbit .eye { animation-delay: 2.6s; } .a3 .eye { animation-delay: 3s; }
+      /* A press: the three bots hop in turn and blink. */
+      .scene.nudge .bot { animation: ob-hop 0.45s var(--ease-out) 1; }
+      .scene.nudge .orbit .bot { animation-delay: 0.06s; }
+      .scene.nudge .a3 .bot { animation-delay: 0.12s; }
+      .scene.nudge .eye { animation: blink 0.35s ease-in-out 0.1s 1; }
+      .ob-pill { animation: ob-popin 0.3s var(--ease-out) 0.45s both; }
+    }
+
+    /* ---------- PayPal card (Onboard2) ----------
+       A payment card: white front with a PayPal-blue corner, PayPal-navy back. It is dealt onto the
+       table on entry, shimmers while PayPal is opening (a loop only while busy), then flips and lifts
+       once connected. Faces are coplanar so the ground shadow sits under the near (right) edge. */
+    --paypal: #003087; --paypal-2: #0070e0; --paypal-3: #009cde;
+    .stage { height: 200px; }
+    .lift { position: relative; width: 100%; height: 200px; perspective: 900px; transform-style: preserve-3d; }
+    @media (min-width: 768px) { .stage { height: 240px; } .lift { height: 240px; max-width: 420px; margin: 0 auto; perspective: 1100px; } }
+    .lift.on { animation: ob-lift 600ms linear 1; }
+    /* Shadow only under the near (right) half: the far-left corner rises in perspective and would expose it. */
+    .ground { position: absolute; left: 34%; right: 0; bottom: -12px; height: 24px; border-radius: 50%; background: rgba(16, 19, 26, 0.22); filter: blur(18px); transform: translateZ(-1px); }
+    .lift.on .ground { animation: ob-groundlift 600ms linear 1; }
+    .flip {
+      position: relative; width: 100%; height: 100%; transform-style: preserve-3d; will-change: transform;
+      transform: rotateX(8deg) rotateY(-12deg); transition: transform 600ms var(--ease-in-out);
+      animation: ob-deal 0.55s var(--ease-out) 0.28s backwards;
+    }
+    .flip.on { transform: rotateX(8deg) rotateY(168deg); }
+    .side {
+      position: absolute; inset: 0; border-radius: 24px; overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+      box-sizing: border-box; padding: 20px 22px; display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .frontS { background: linear-gradient(135deg, #fff 0%, #f5f8fc 100%); border: 1px solid var(--color-border); box-shadow: 0 1px 0 #fff inset, 18px 24px 40px -20px rgba(16, 19, 26, 0.35); }
+    /* PayPal blue bleeds in from the top-right corner of the front. */
+    .frontS::before { content: ""; position: absolute; right: -28%; top: -70%; width: 82%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(0, 156, 222, 0.26) 0%, rgba(0, 112, 224, 0.1) 42%, transparent 70%); pointer-events: none; }
+    .backS { background: linear-gradient(135deg, #001c64 0%, #003087 55%, #0a4fbf 100%); color: #eef2fa; transform: rotateY(180deg); box-shadow: 18px 24px 40px -20px rgba(0, 28, 100, 0.6); }
+    .backS::before { content: ""; position: absolute; left: -22%; bottom: -75%; width: 85%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(0, 156, 222, 0.55) 0%, transparent 65%); pointer-events: none; }
+    /* Sheen: a loop across the front while PayPal is opening; one pass over the back after the flip. */
+    .sheen { position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.22) 50%, transparent 65%); transform: translateX(-120%); pointer-events: none; }
+    .frontS .sheen { background: linear-gradient(105deg, transparent 35%, rgba(0, 112, 224, 0.12) 50%, transparent 65%); }
+    .flip.busy .frontS .sheen { animation: ob-sheen 1.3s linear infinite; }
+    .flip.on .backS .sheen { animation: ob-sheen 700ms var(--ease-out) 300ms 1 both; }
+    .c1, .c2, .c3 { opacity: 0; transform: translateY(6px); transition: opacity 250ms var(--ease-out), transform 250ms var(--ease-out); }
+    .flip.on .c1 { opacity: 1; transform: none; transition-delay: 300ms; }
+    .flip.on .c2 { opacity: 1; transform: none; transition-delay: 360ms; }
+    .flip.on .c3 { opacity: 1; transform: none; transition-delay: 420ms; }
+    /* PayPal wordmark: "Pay" navy, "Pal" blue, with the double-P mark. */
+    .pp { position: relative; display: inline-flex; align-items: center; gap: 7px; font: 700 1rem/1 var(--font-body); letter-spacing: -0.02em; color: var(--paypal); }
+    .pp b { font-weight: 700; color: var(--paypal-2); }
+    .backS .pp { color: #fff; --pp-a: #fff; --pp-b: #7fd1ff; }
+    .backS .pp b { color: #7fd1ff; }
+    .dots { position: relative; font: 500 0.875rem/1 var(--font-mono); letter-spacing: 0.16em; color: var(--color-text-2); }
+    .check {
+      width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle at 35% 28%, #edffa6 0%, #c8ff4d 45%, #9fd92a 100%);
+      color: #1c3300; display: flex; align-items: center; justify-content: center; transform: scale(0.85); opacity: 0; position: relative;
+      transition: transform 250ms var(--ease-out) 320ms, opacity 200ms var(--ease-out) 320ms;
+    }
+    .check::after { content: ""; position: absolute; inset: -2px; border-radius: 50%; border: 2px solid var(--color-lime); opacity: 0; pointer-events: none; }
+    .on .check::after { animation: ob-ping 600ms var(--ease-out) 560ms 1; }
+    .on .check { transform: none; opacity: 1; }
+
+    /* Connect button: two stacked labels cross-fade while busy. */
+    .lbl { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 200ms var(--ease-out); }
+    .lbl.busyL { opacity: 0; }
+    .busy .lbl.idleL { opacity: 0; }
+    .busy .lbl.busyL { opacity: 1; }
+    .busy { cursor: default; }
+    .busy:active { transform: none; }
+    .spin { width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid rgba(28, 51, 0, 0.25); border-top-color: #1c3300; animation: ob-spin 0.7s linear infinite; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .w, .in, .ob-pill { animation: none; opacity: 1; transform: none; }
+      .scene, .scene.nudge .shop-sign, .scene.nudge .bot, .scene.nudge .eye { animation: none; }
+      &.ob-3 .a3 .agIn, &.ob-3 .a3 .agsh { animation: none; opacity: 1; }
+      .lift.on, .lift.on .ground, .flip, .flip.busy .frontS .sheen, .flip.on .backS .sheen, .on .check::after { animation: none; }
+      .flip { opacity: 1; }
+      .c1, .c2, .c3 { transform: none; transition: opacity 200ms var(--ease-out); }
+      .flip, .flip.on { transition: none; transform: none; }
+      .side { transition: opacity 200ms var(--ease-out); }
+      .backS { transform: none; opacity: 0; }
+      .flip.on .frontS { opacity: 0; }
+      .flip.on .backS { opacity: 1; }
+      .check { transition: opacity 200ms var(--ease-out); transform: none; }
+      .spin { animation-duration: 1.4s; }
+    }
+  }
+}
+
+/* Unlayered on purpose: the selected language chip must beat the Button's bg/text utilities. */
+.r-onboarding .ob-lang[aria-pressed="true"] { background: var(--color-text); color: #fff; border-color: var(--color-text); }
+
+@keyframes ob-fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes ob-fadeonly { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ob-settle { from { transform: translateY(-18px); opacity: 0; } to { transform: none; opacity: 1; } }
+/* The bot keeps its camera-facing counter-rotation while it hops. */
+@keyframes ob-hop { 0%, 100% { transform: rotateY(24deg) rotateX(16deg); } 40% { transform: rotateY(24deg) rotateX(16deg) translateY(-7px); } }
+@keyframes ob-signpop { 0%, 100% { transform: none; } 35% { transform: scale(1.08); } }
+@keyframes ob-popin { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: none; } }
+@keyframes ob-lift { 0% { transform: none; } 25% { transform: translateY(-9px) scale(1.02); } 50% { transform: translateY(-12px) scale(1.03); } 75% { transform: translateY(-9px) scale(1.02); } 100% { transform: none; } }
+@keyframes ob-groundlift { 0% { transform: translateZ(-1px) scale(1); opacity: 1; } 50% { transform: translateZ(-1px) scale(0.86); opacity: 0.55; } 100% { transform: translateZ(-1px) scale(1); opacity: 1; } }
+@keyframes ob-sheen { to { transform: translateX(120%); } }
+@keyframes ob-deal { from { opacity: 0; transform: translateY(18px) rotateX(18deg) rotateY(-22deg); } to { opacity: 1; transform: rotateX(8deg) rotateY(-12deg); } }
+@keyframes ob-ping { from { transform: scale(1); opacity: 0.9; } to { transform: scale(2.4); opacity: 0; } }
+@keyframes ob-spin { to { transform: rotate(360deg); } }

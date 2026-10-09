@@ -1,0 +1,70 @@
+/* Buyer checkout page. Scoped under .r-pay; keyframes at the top of the layer. */
+@layer components {
+  @keyframes pay-rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes pay-pop {
+    from { opacity: 0; transform: scale(0.85); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes pay-ping {
+    from { opacity: 0.9; transform: scale(1); }
+    to { opacity: 0; transform: scale(2.4); }
+  }
+  @keyframes pay-glow {
+    0% { opacity: 0; }
+    25% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @keyframes pay-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .r-pay {
+    .col { max-width: 520px; width: 100%; margin: 0 auto; }
+    .rise { animation: pay-rise 0.45s var(--ease-out) backwards; }
+    .check {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 36px; height: 36px; border-radius: 999px;
+      background: var(--color-lime); color: #1c3300;
+      box-shadow: var(--shadow-lime);
+    }
+    paypal-button {
+      display: block; min-height: 56px;
+      --paypal-button-border-radius: 999px;
+      transition: transform 160ms var(--ease-out);
+    }
+    paypal-button:active { transform: scale(0.97); }
+    paypal-button[hidden] { display: none; }
+    .q { background: #fff6e3; border: 1px solid #ffd58a; border-radius: 22px; }
+    .card.paid { border-color: #c9e7a0; }
+
+    /* The paid moment (.won, only when the payment lands during this visit). Purpose: feedback,
+       seen once per purchase. Title swaps in, the confirmation card rises (.rise, 100ms), the check
+       pops with one ring, the total glows lime once, then the line that hands over to the seller. */
+    .won .title { animation: pay-rise 0.35s var(--ease-out) backwards; }
+    .won .check { position: relative; animation: pay-pop 250ms var(--ease-out) 250ms backwards; }
+    .won .check::after {
+      content: ""; position: absolute; inset: -2px; border-radius: 50%;
+      border: 2px solid var(--color-lime); opacity: 0; pointer-events: none;
+      animation: pay-ping 600ms var(--ease-out) 450ms 1;
+    }
+    .won .total { position: relative; isolation: isolate; }
+    .won .total::before {
+      content: ""; position: absolute; inset: -2px -8px; border-radius: 8px; z-index: -1;
+      background: var(--color-lime); opacity: 0; pointer-events: none;
+      animation: pay-glow 1.2s var(--ease-out) 400ms 1;
+    }
+    .won .told { animation: pay-fade 300ms var(--ease-out) 550ms backwards; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .r-pay .rise { animation: none; }
+    .r-pay .won .title { animation: pay-fade 200ms linear backwards; }
+    .r-pay .won .check { animation: pay-fade 200ms linear 250ms backwards; }
+    .r-pay .won .check::after { animation: none; }
+  }
+}

@@ -1,0 +1,26 @@
+/* /searches — ported from Searches.dc.html + DesktopSearches.dc.html */
+@layer components {
+  .r-searches .row { display: flex; align-items: center; gap: 12px; padding: 12px 10px; border-bottom: 1px solid var(--color-border-soft); }
+  .r-searches .row:last-child { border-bottom: 0; }
+  .r-searches .query { font-size: 0.875rem; line-height: 1.35; }
+  .r-searches .query.ar { text-align: left; }
+
+  /* Meter grows once on mount (transform only, origin left). */
+  .r-searches .meter { height: 6px; border-radius: 3px; background: var(--color-border-soft); overflow: hidden; position: relative; }
+  .r-searches .meter::after {
+    content: ""; position: absolute; inset: 0; border-radius: 3px; background: var(--color-focus);
+    transform-origin: left; transform: scaleX(var(--v));
+    animation: meter-grow 0.5s var(--ease-out) 0.15s both;
+  }
+  .r-searches .meter.miss::after { background: var(--color-saffron); }
+  @keyframes meter-grow { from { transform: scaleX(0); } }
+
+  .r-searches .sdot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .r-searches .sdot.ok { background: var(--color-live); }
+  .r-searches .sdot.miss { background: var(--color-saffron); }
+  .r-searches .sdot.grey { background: #c9cec3; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .r-searches .meter::after { animation: none; }
+  }
+}

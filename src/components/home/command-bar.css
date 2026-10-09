@@ -1,0 +1,40 @@
+/* Home command bar: the mic + input pill and the assistant's answer card. Nested under .r-cmd.
+   Motion: mic ⇄ stop crossfade 160ms; the ring ripples only while recording (a state, so it may loop);
+   the answer card is a one-shot 300ms reveal; everything is transform/opacity. */
+@layer components {
+  .r-cmd {
+    .mic .ico { position: absolute; transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out); }
+    .mic .ico-stop { width: 16px; height: 16px; border-radius: 4px; background: #1c3300; opacity: 0; transform: scale(0.8); }
+    .mic:disabled { cursor: default; }
+    &.rec .mic .ico-mic { opacity: 0; transform: scale(0.8); }
+    &.rec .mic .ico-stop { opacity: 1; transform: none; }
+    &.rec .mic::after { animation: cmd-ripple 1.6s var(--ease-out) infinite; }
+
+    /* Replaces the input while the mic is live: "Listening · 0:07" / "Writing it down…" */
+    .status { flex: 1; min-width: 0; height: 2.75rem; display: flex; align-items: center; gap: 10px; padding-left: 4px; animation: cmd-fade 200ms var(--ease-out) both; }
+    @media (min-width: 768px) { .status { height: 3rem; } }
+
+    .ans { animation: cmd-reveal 300ms var(--ease-out) both; }
+    .ans-text { margin: 0; font-size: 0.9375rem; line-height: 1.6; white-space: pre-line; overflow-wrap: anywhere; }
+    .ans-text[dir="rtl"] { text-align: right; font-size: 1.0625rem; line-height: 1.75; }
+    @media (min-width: 768px) {
+      .ans-text { font-size: 1.0625rem; }
+      .ans-text[dir="rtl"] { font-size: 1.1875rem; }
+    }
+
+    .close { min-height: 2.75rem; padding: 0 6px; margin-right: -6px; border: 0; background: transparent; cursor: pointer; border-radius: 8px; transition: transform 160ms var(--ease-out); }
+    .close:active { transform: scale(0.97); }
+    .close:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+    @media (hover: hover) and (pointer: fine) { .close:hover { color: var(--color-text); } }
+  }
+
+  @keyframes cmd-ripple { from { transform: scale(1); opacity: 0.9; } to { transform: scale(1.7); opacity: 0; } }
+  @keyframes cmd-reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes cmd-fade { from { opacity: 0; } to { opacity: 1; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .r-cmd .ans { animation: cmd-fade 200ms var(--ease-out) both; }
+    .r-cmd.rec .mic::after { animation: none; opacity: 0.7; }
+    .r-cmd .mic .ico { transition: opacity 160ms var(--ease-out); transform: none; }
+  }
+}

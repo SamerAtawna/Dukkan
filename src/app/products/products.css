@@ -1,0 +1,173 @@
+/* Products + ProductEdit screens (Products.dc.html, ProductEdit.dc.html and Desktop pairs).
+   Scoped under .r-products so nothing here collides with other routes. */
+@layer components {
+  .r-products {
+    /* ---- list ---- */
+    .lime {
+      border: 0;
+      color: #1c3300;
+      background: radial-gradient(circle at 35% 28%, #edffa6 0%, #c8ff4d 45%, #9fd92a 100%);
+      box-shadow: 0 2px 0 rgba(255, 255, 255, 0.85) inset, 0 -5px 10px rgba(70, 110, 0, 0.2) inset, 0 12px 24px -10px rgba(120, 190, 20, 0.7);
+    }
+    .tile {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 10px 10px 12px;
+      border-radius: 22px;
+      color: inherit;
+      transition: transform 160ms var(--ease-out);
+    }
+    .tile:active { transform: scale(0.98); }
+    .tile:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+    .tile.add {
+      border: 1.5px dashed #c9cec3;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--color-text-2);
+      min-height: 180px;
+    }
+    .photo {
+      aspect-ratio: 1;
+      border-radius: 16px;
+      background: #efe7d6;
+      border: 1px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .photo.paused { filter: saturate(0.2); opacity: 0.7; }
+    .g {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    @media (min-width: 768px) {
+      .g { grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); }
+    }
+    .item { animation: p-fadein 0.3s var(--ease-out) backwards; }
+    .item:nth-child(2) { animation-delay: 50ms; }
+    .item:nth-child(3) { animation-delay: 100ms; }
+    .item:nth-child(4) { animation-delay: 150ms; }
+
+    /* ---- edit ---- */
+    .photo.add {
+      border: 1.5px dashed #c9cec3;
+      background: transparent;
+      color: var(--color-text-2);
+      cursor: pointer;
+      flex-direction: column;
+      gap: 4px;
+      font: 500 0.75rem var(--font-body);
+      transition: transform 160ms var(--ease-out);
+      padding: 0;
+    }
+    .photo.add:active { transform: scale(0.97); }
+    .photo.add:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+
+    /* Inline, underline-on-focus fields (not the boxed global .field). */
+    .efield {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      border: 0;
+      border-bottom: 1px dashed transparent;
+      border-radius: 0;
+      background: transparent;
+      padding: 0 0 2px;
+      margin: 0;
+      color: inherit;
+      font: inherit;
+      resize: none;
+      transition: border-color 180ms ease;
+    }
+    @media (hover: hover) and (pointer: fine) { .efield:hover { border-bottom-color: #c9cec3; } }
+    .efield:focus { outline: none; border-bottom-color: var(--color-focus); }
+
+    .chip {
+      gap: 6px;
+      padding: 0 6px 0 10px;
+    }
+    .chip button {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 0;
+      background: var(--color-border);
+      color: var(--color-text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+      font: inherit;
+    }
+    .chip button:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 2px; }
+    .chip-input {
+      min-height: 30px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid var(--color-focus);
+      background: var(--color-surface);
+      font: 500 0.8125rem var(--font-body);
+      color: var(--color-text);
+      outline: none;
+      width: 9rem;
+    }
+
+    .step {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font: 500 1.125rem/1 var(--font-body);
+      transition: transform 160ms var(--ease-out);
+      padding: 0;
+    }
+    .step:active { transform: scale(0.94); }
+    .step:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+
+    /* Save → Saved: two stacked labels cross-fade (transition, so it can retarget). */
+    .big { min-height: 56px; font-size: 1rem; width: 100%; position: relative; }
+    .lbl {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 200ms var(--ease-out);
+    }
+    .lbl.savedL { opacity: 0; }
+    .saved .lbl.saveL { opacity: 0; }
+    .saved .lbl.savedL { opacity: 1; }
+
+    .ghost {
+      border: 0;
+      box-shadow: none;
+      background: transparent;
+      color: var(--color-saffron-ink);
+      min-height: 40px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .item { animation: none; }
+      .sw::after { transition: none; }
+      .tile, .step, .photo.add { transition: none; }
+    }
+  }
+}
+
+@keyframes p-fadein {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}

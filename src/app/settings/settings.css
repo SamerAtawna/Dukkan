@@ -1,0 +1,26 @@
+/* /settings — ported from Settings.dc.html + DesktopSettings.dc.html */
+@layer components {
+  /* Settings uses the compact field (48px, ground fill) rather than the 56px onboarding field. */
+  .r-settings .field {
+    height: 3rem; border-radius: 14px; background: var(--color-ground); padding: 0 14px;
+    font-size: 1rem; transition: border-color 160ms ease, background-color 160ms ease;
+  }
+  .r-settings .field:focus { border-color: var(--color-focus); background: var(--color-surface); }
+
+  .r-settings .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--color-border-soft); }
+  .r-settings .row:last-child { border-bottom: 0; padding-bottom: 0; }
+  .r-settings .row:first-child { padding-top: 0; }
+
+  /* Sections fade up in order, 50ms stagger. One-shot; nothing transitions them later. */
+  .r-settings .sec { padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; border-radius: 22px; animation: sec-in 0.3s var(--ease-out) both; }
+  .r-settings .sec:nth-child(2) { animation-delay: 50ms; }
+  .r-settings .sec:nth-child(3) { animation-delay: 100ms; }
+  .r-settings .sec:nth-child(4) { animation-delay: 150ms; }
+  .r-settings .sec:nth-child(5) { animation-delay: 200ms; }
+  @keyframes sec-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .r-settings .sec { animation: none; }
+    .r-settings .sw::after { transition: none; }
+  }
+}
