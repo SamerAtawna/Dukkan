@@ -6,6 +6,8 @@ The seller makes crafts, food or clothing at home, is on a phone, and may not re
 
 Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
 
+**Try it now:** https://dukkan-eight.vercel.app (seller app) and https://dukkan-eight.vercel.app/agent (demo buyer agent). Everything runs on the PayPal sandbox; no real money moves. See [Try the hosted demo](#try-the-hosted-demo) for the sandbox buyer login.
+
 ## What is real
 
 | Piece | How |
@@ -13,14 +15,51 @@ Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
 | Voice note → transcript | Browser `MediaRecorder` → `POST /api/transcribe` → Gemini reads the audio |
 | Transcript + photos → English listing | `POST /api/listing` → Claude, structured output. Anything the AI inferred is kept apart as "Added by AI" |
 | Agent-facing catalogue | `GET /api/catalog?q=` and `GET /api/catalog/[id]`. Every query is logged so the seller sees what agents wanted |
-| Cart → PayPal order | `POST /api/checkout` → PayPal Orders v2 `create` (sandbox), order id carried as `custom_id` |
-| Buyer pays | `/pay/[id]` renders the PayPal JS SDK v6 button; on approval `POST /api/checkout/[id]/capture` captures the order and records buyer name and shipping address |
-| Seller ships | `PATCH /api/orders/[id]` marks shipped and pushes the tracking number to PayPal (`/v2/checkout/orders/{id}/track`) |
+| Cart → PayPal order | `POST /api/checkout` → PayPal Orders v2 `createOrder` through the official [PayPal Server SDK](https://www.npmjs.com/package/@paypal/paypal-server-sdk) (sandbox), our order id carried as `custom_id` |
+| Buyer pays | `/pay/[id]` renders the PayPal JS SDK v6 button; on approval `POST /api/checkout/[id]/capture` captures the order (Server SDK `captureOrder`, idempotent with `PayPal-Request-Id`) and records buyer name and shipping address |
+| Seller ships | `PATCH /api/orders/[id]` marks shipped and pushes the tracking number to PayPal (Server SDK `createOrderTracking`, Orders v2 `/track`) |
+| Seller refunds | Before shipping, "Refund the buyer" on the order does a full refund through the Payments API (Server SDK `refundCapturedPayment`, idempotent per capture); the order closes as refunded and the item goes back into stock |
 | Demo buyer agent | `/agent` is a Claude agent with three tools (search, product, checkout). It talks to Dukkan only over the public API, as Perplexity or Copilot would |
 | Seller assistant | The "Ask or tell Dukkan" bar on the home screen. Speak (same microphone as `/add`) or type, in any language. Questions go to `POST /api/assistant`, a Claude agent with tools over the seller's own data (today, orders, agent searches, products, open/close). When the seller describes something they make, it hands the words to the add-product flow instead |
 | Data | Supabase Postgres, accessed only from route handlers with the secret key |
 
 Nothing on the seller side is simulated any more. The home screen polls the real feed; the count rolls and the coin drops when a real payment is captured.
+
+## Try the hosted demo
+
+The hosted app is open on purpose so judges can try the seller side without a key.
+
+1. Open https://dukkan-eight.vercel.app (the seller app; it polls for new orders).
+2. In another window open https://dukkan-eight.vercel.app/agent, ask for an embroidered cushion and confirm. The agent returns a pay link.
+3. Open the pay link, click the PayPal button and log in with this **sandbox buyer** account (a PayPal sandbox test account, not a real one):
+
+   - Email: `sb-e6an153115349@personal.example.com`
+   - Password: `6hKS@r)I`
+
+4. Back in the seller app the order appears as paid. Open it and add a tracking number; it is pushed to PayPal.
+
+Any PayPal sandbox *personal* account works too, if you have your own.
+
+## Agent API
+
+The public API that shopping agents use is described in OpenAPI 3.0: [`public/openapi.yaml`](public/openapi.yaml), served at [`/openapi.yaml`](https://dukkan-eight.vercel.app/openapi.yaml). No key is needed.
+
+| Call | What it does |
+| --- | --- |
+| `GET /api/catalog?q=` | Search products. Send `X-Agent: <your agent's name>`; the seller sees every query, including what the shop does not sell |
+| `GET /api/catalog/{id}` | One product, with photo URLs |
+| `POST /api/checkout` | Turn a cart into a PayPal order. Returns `payUrl`, the page with the PayPal button, for the buyer |
+| `GET /api/checkout/{orderId}?t=` | Poll whether the buyer has paid (`t` is the token in `payUrl`) |
+
+Payment always stays with the human: an agent builds the cart and hands over the link, it never pays by itself.
+
+## AI tools used
+
+| Tool | Where |
+| --- | --- |
+| Claude (`claude-opus-5-5`, Anthropic API) | Writes the English listing from the transcript and photos (structured output); runs the demo buyer agent and the seller assistant (tool use, streamed) |
+| Gemini (`gemini-3.8-flash`) | Transcribes the seller's voice note, in Arabic, Hebrew or English |
+| [APIMatic Context Plugin for PayPal](https://github.com/paypaldev/server-sdk-context-plugin-preview) | Used in Claude Code to build the server-side PayPal integration on the PayPal Server SDK: Orders (create, capture, tracking) and Payments (refunds). Its skills flagged three SDK defaults that we override in `src/lib/server/paypal.ts`: no request timeout, retries off, and a failed token fetch that is cached for the life of the client |
 
 ## Run it
 
@@ -60,7 +99,7 @@ Any other agent can do what the demo agent does: `curl "http://localhost:3000/ap
 
 ## Hosting it
 
-The seller app has one seller and no accounts, so on a public deployment set `SELLER_TOKEN` to a long random string and sign in the seller's browser once at `/unlock` (the key goes in a POST body and the cookie holds only a value derived from it). Without the cookie, the seller routes answer 401; the catalogue, checkout, pay page and demo agent stay public. Pay links carry their own secret (`/pay/<id>?t=...`), so an order id alone reveals nothing. Locally, leave `SELLER_TOKEN` empty.
+The public demo above runs without `SELLER_TOKEN` so judges can get in. For a real shop: the seller app has one seller and no accounts, so on a public deployment set `SELLER_TOKEN` to a long random string and sign in the seller's browser once at `/unlock` (the key goes in a POST body and the cookie holds only a value derived from it). Without the cookie, the seller routes answer 401; the catalogue, checkout, pay page and demo agent stay public. Pay links carry their own secret (`/pay/<id>?t=...`), so an order id alone reveals nothing. Locally, leave `SELLER_TOKEN` empty.
 
 ## Demo flags
 
@@ -78,4 +117,4 @@ npm run build
 
 One seller per deployment: the app's PayPal sandbox app is the seller's account, and "Connect PayPal" on onboarding verifies those credentials with a real OAuth call. A multi-seller Dukkan would onboard each seller through PayPal's Partner Referrals API. Payment approval stays with the human buyer, as it does in Perplexity and Copilot today; the agent builds the cart and hands over the PayPal link.
 
-Design source of truth is in `../dukkan-design/design/` (one HTML file per screen). Licence: MIT, see the repository root.
+Licence: MIT, see [`LICENSE`](LICENSE).
