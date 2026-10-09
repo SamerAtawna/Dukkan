@@ -8,6 +8,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { OnboardingShell } from "@/components/onboarding/shell";
 import { ShopScene } from "@/components/onboarding/shop-scene";
 import { useShop } from "@/lib/store";
+import { useProducts } from "@/lib/store-products";
 
 /** Step 3: first-time delight. The lights come on at 0.4s, agents arrive from 1s, then the copy and CTA reveal. */
 export default function OpenPage() {
@@ -16,10 +17,14 @@ export default function OpenPage() {
   const save = useShop((s) => s.save);
   const onboarded = useShop((s) => s.onboarded);
   const loaded = useShop((s) => s.loaded);
+  const loadProducts = useProducts((s) => s.load);
 
+  // Home waits for the shop and the products before it draws anything. Load both while the
+  // celebration plays, so "Go to my shop" lands on a ready home instead of a blank screen.
   useEffect(() => {
     void load();
-  }, [load]);
+    void loadProducts();
+  }, [load, loadProducts]);
   // Reaching this screen means setup is done, PayPal or not.
   useEffect(() => {
     if (loaded && !onboarded) void save({ onboarded: true, open: true });
