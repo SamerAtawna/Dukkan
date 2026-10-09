@@ -1,0 +1,375 @@
+openapi: 3.0.3
+info:
+  title: Dukkan Agent API
+  version: 1.0.0
+  description: |
+    The public API of a Dukkan shop: what AI shopping agents use to search the
+    catalogue, build a cart and hand the buyer a PayPal payment link.
+
+    The flow is three calls:
+
+    1. `GET /api/catalog?q=...` finds products.
+    2. `POST /api/checkout` turns a cart into a PayPal order (sandbox) and returns
+       `payUrl`, a buyer-facing page with the PayPal button.
+    3. The buyer pays on that page. Payment always stays with the human: an agent
+       never pays by itself and never handles card or account details.
+
+    Send an `X-Agent` header naming your agent. Every search is logged so the
+    seller can see what agents asked for, including what the shop does not sell.
+
+    No API key is needed for these routes. Errors are JSON `{ "error": "..." }`
+    with an optional `code`.
+  license:
+    name: MIT
+    url: https://opensource.org/license/mit
+servers:
+  - url: https://dukkan-eight.vercel.app
+    description: Hosted demo (PayPal sandbox)
+  - url: http://localhost:3000
+    description: Local development
+security: []  # public: agents need no key
+tags:
+  - name: Catalog
+    description: Search and read the products an agent can buy.
+  - name: Checkout
+    description: Turn a cart into a PayPal order and follow it until it is paid.
+paths:
+  /api/catalog:
+    get:
+      tags: [Catalog]
+      operationId: searchCatalog
+      summary: Search the catalogue
+      description: |
+        Matches every word of `q` against product titles, details and
+        descriptions, title matches first. Only visible, in-stock products of an
+        open shop are returned. An empty `q` lists everything on sale.
+      parameters:
+        - name: q
+          in: query
+          description: What the buyer wants, in plain English.
+          schema: { type: string }
+          example: embroidered cushion
+        - $ref: '#/components/parameters/AgentHeader'
+      responses:
+        '200':
+          description: Matching products.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CatalogSearchResult' }
+        '503': { $ref: '#/components/responses/NotConfigured' }
+  /api/catalog/{productId}:
+    get:
+      tags: [Catalog]
+      operationId: getProduct
+      summary: Get one product
+      parameters:
+        - $ref: '#/components/parameters/ProductId'
+      responses:
+        '200':
+          description: The product as agents see it.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CatalogItem' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '503': { $ref: '#/components/responses/NotConfigured' }
+  /api/catalog/{productId}/photos/{index}:
+    get:
+      tags: [Catalog]
+      operationId: getProductPhoto
+      summary: Get a product photo
+      description: The image behind `photos[index].url` of a catalogue item.
+      parameters:
+        - $ref: '#/components/parameters/ProductId'
+        - name: index
+          in: path
+          required: true
+          description: Zero-based position in the product's `photos`.
+          schema: { type: integer, minimum: 0 }
+      responses:
+        '200':
+          description: The image.
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+            image/png:
+              schema: { type: string, format: binary }
+            image/webp:
+              schema: { type: string, format: binary }
+            image/gif:
+              schema: { type: string, format: binary }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/checkout:
+    post:
+      tags: [Checkout]
+      operationId: createCheckout
+      summary: Create a checkout
+      description: |
+        Reserves a Dukkan order and creates the matching PayPal order (intent
+        CAPTURE). Give the buyer `payUrl`; they approve and pay on that page.
+        Only call this after the buyer has confirmed what to buy.
+      parameters:
+        - $ref: '#/components/parameters/AgentHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CheckoutRequest' }
+            example:
+              items: [{ productId: cushion-cover, qty: 1 }]
+              agent: My shopping agent
+      responses:
+        '201':
+          description: The order is created and waiting for the buyer to pay.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CheckoutResult' }
+        '400':
+          description: The cart is invalid, an item is hidden or out of stock, or the shop is closed.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/PayPalError' }
+        '503': { $ref: '#/components/responses/NotConfigured' }
+  /api/checkout/{orderId}:
+    get:
+      tags: [Checkout]
+      operationId: getCheckout
+      summary: Get a checkout
+      description: Poll this to see whether the buyer has paid.
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+        - $ref: '#/components/parameters/PayToken'
+      responses:
+        '200':
+          description: The order as the buyer sees it.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CheckoutStatus' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '503': { $ref: '#/components/responses/NotConfigured' }
+  /api/checkout/{orderId}/capture:
+    post:
+      tags: [Checkout]
+      operationId: captureCheckout
+      summary: Capture a checkout
+      description: |
+        Takes the payment after the buyer approved it in PayPal. The pay page
+        calls this; agents normally do not need to. Idempotent: calling it on
+        an order that is already paid returns that order with `alreadyPaid`.
+      parameters:
+        - $ref: '#/components/parameters/OrderId'
+        - $ref: '#/components/parameters/PayToken'
+      responses:
+        '200':
+          description: The order is paid.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CaptureResult' }
+        '202':
+          description: PayPal accepted the approval but has not completed the capture yet (for example a pending review).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CaptureResult' }
+        '400':
+          description: The order has no PayPal order attached.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '502': { $ref: '#/components/responses/PayPalError' }
+        '503': { $ref: '#/components/responses/NotConfigured' }
+components:
+  parameters:
+    AgentHeader:
+      name: X-Agent
+      in: header
+      description: The name of the agent making the call. Shown to the seller.
+      schema: { type: string, maxLength: 80 }
+      example: My shopping agent
+    ProductId:
+      name: productId
+      in: path
+      required: true
+      description: Product id from the catalogue.
+      schema: { type: string }
+      example: cushion-cover
+    OrderId:
+      name: orderId
+      in: path
+      required: true
+      description: The `orderId` returned by createCheckout.
+      schema: { type: string }
+      example: '1043'
+    PayToken:
+      name: t
+      in: query
+      required: true
+      description: The secret token from the `payUrl` returned by createCheckout. Without it the order reads as not found.
+      schema: { type: string }
+  responses:
+    NotFound:
+      description: Not found, hidden, or the shop is closed.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    PayPalError:
+      description: PayPal rejected the request. `detail` carries PayPal's own error body.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotConfigured:
+      description: The server is missing a key it needs (`code` is `NOT_CONFIGURED`).
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+  schemas:
+    Photo:
+      type: object
+      required: [url, label]
+      properties:
+        url:
+          type: string
+          format: uri
+          description: Absolute URL of the image (getProductPhoto).
+        label: { type: string }
+    CatalogItem:
+      type: object
+      required: [id, title, price, currency, inStock, details, description, photos]
+      properties:
+        id: { type: string, example: cushion-cover }
+        title: { type: string, example: Hand-embroidered cushion cover }
+        price: { type: number, format: double, example: 35 }
+        currency: { type: string, example: USD }
+        inStock: { type: integer, minimum: 0, example: 3 }
+        details:
+          type: array
+          items: { type: string }
+          example: [Cotton, 45 × 45 cm, Red and black]
+        description: { type: string }
+        photos:
+          type: array
+          items: { $ref: '#/components/schemas/Photo' }
+    CheckoutHint:
+      type: object
+      description: How to buy what was found.
+      required: [method, path, body]
+      properties:
+        method: { type: string, example: POST }
+        path: { type: string, example: /api/checkout }
+        body:
+          type: object
+          description: An example request body for createCheckout.
+    CatalogSearchResult:
+      type: object
+      required: [shop, query, count, items, checkout]
+      properties:
+        shop: { type: string, example: Dukkan }
+        query: { type: string, example: cushion }
+        count: { type: integer, minimum: 0, example: 1 }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/CatalogItem' }
+        checkout: { $ref: '#/components/schemas/CheckoutHint' }
+    CartLine:
+      type: object
+      required: [productId, qty]
+      properties:
+        productId: { type: string, minLength: 1, example: cushion-cover }
+        qty: { type: integer, minimum: 1, maximum: 50, example: 1 }
+    CheckoutRequest:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items: { $ref: '#/components/schemas/CartLine' }
+        agent:
+          type: string
+          maxLength: 80
+          description: The agent's name. Overrides the `X-Agent` header.
+    OrderItem:
+      type: object
+      required: [productId, title, qty, unitPrice]
+      properties:
+        productId: { type: string }
+        title: { type: string }
+        qty: { type: integer, minimum: 1 }
+        unitPrice: { type: number, format: double }
+    OrderStatus:
+      type: string
+      enum: [pending, paid, shipped, delivered, cancelled]
+    CheckoutResult:
+      type: object
+      required: [orderId, paypalOrderId, total, currency, payUrl, approveUrl, items]
+      properties:
+        orderId: { type: string, example: '1043' }
+        paypalOrderId: { type: string, description: The PayPal Orders v2 id. }
+        total: { type: number, format: double, example: 35 }
+        currency: { type: string, example: USD }
+        payUrl:
+          type: string
+          format: uri
+          description: The page with the PayPal button. Give this to the buyer. It carries the secret token `t`.
+        approveUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: PayPal's own approval link for the same order, for agents that want to hand it over directly.
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/OrderItem' }
+    CheckoutStatus:
+      type: object
+      required: [orderId, shop, status, paypalOrderId, total, currency, items, agent, paidAt, buyerName]
+      properties:
+        orderId: { type: string }
+        shop: { type: string }
+        status: { $ref: '#/components/schemas/OrderStatus' }
+        paypalOrderId: { type: string, nullable: true }
+        total: { type: number, format: double }
+        currency: { type: string }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/OrderItem' }
+        agent: { type: string, nullable: true }
+        paidAt: { type: string, format: date-time, nullable: true }
+        buyerName: { type: string, nullable: true }
+    BuyerReceipt:
+      type: object
+      required: [orderId, status, buyerName, paidAt, amount, currency]
+      properties:
+        orderId: { type: string }
+        status: { $ref: '#/components/schemas/OrderStatus' }
+        buyerName: { type: string, nullable: true }
+        paidAt: { type: string, format: date-time, nullable: true }
+        amount: { type: number, format: double }
+        currency: { type: string }
+    CaptureResult:
+      type: object
+      required: [order]
+      properties:
+        order: { $ref: '#/components/schemas/BuyerReceipt' }
+        alreadyPaid:
+          type: boolean
+          description: True when the order had already been captured before this call.
+        pending:
+          type: boolean
+          description: True (with HTTP 202) when PayPal has not completed the capture yet.
+        paypalStatus:
+          type: string
+          description: PayPal's order status when `pending` is true.
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+        code: { type: string, example: NOT_CONFIGURED }
+        detail:
+          description: PayPal's error body, on 502.
+        issues:
+          type: array
+          description: Validation problems, on a 400 for a malformed body.
+          items: { type: object }
