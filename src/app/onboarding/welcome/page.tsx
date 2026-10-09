@@ -1,9 +1,10 @@
 "use client";
 
 import "../onboarding.css";
-import { useEffect, useState } from "react";
+import { useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRightIcon } from "@/components/icons";
+import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/button";
 import { OnboardingShell } from "@/components/onboarding/shell";
 import { ShopScene } from "@/components/onboarding/shop-scene";
@@ -17,18 +18,21 @@ export default function WelcomePage() {
   const setShopName = useOnboarding((s) => s.setShopName);
   const setLang = useOnboarding((s) => s.setLang);
   const hydrate = useOnboarding((s) => s.hydrate);
+  const hydrated = useOnboarding((s) => s.hydrated);
   const commit = useOnboarding((s) => s.commit);
-  const [saving, setSaving] = useState(false);
+  const [going, startGoing] = useTransition();
 
   useEffect(() => {
     void hydrate();
-  }, [hydrate]);
+    router.prefetch("/onboarding/paypal");
+  }, [hydrate, router]);
 
-  async function next() {
-    if (saving) return;
-    setSaving(true);
-    await commit();
-    router.push("/onboarding/paypal");
+  /** The save is optimistic (the store updates first), so step 2 does not wait for the server. */
+  function next() {
+    // Before the saved answers load, the fields are blank: saving them would rename the shop "My shop".
+    if (going || !hydrated) return;
+    void commit();
+    startGoing(() => router.push("/onboarding/paypal"));
   }
 
   return (
@@ -56,7 +60,7 @@ export default function WelcomePage() {
           placeholder="e.g. Salma Crafts"
           value={shopName}
           onChange={(e) => setShopName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && void next()}
+          onKeyDown={(e) => e.key === "Enter" && next()}
           autoComplete="organization"
         />
       </div>
@@ -85,9 +89,16 @@ export default function WelcomePage() {
 
       <div className="flex-1" />
 
-      <Button tone="lime" size="big" className="w-full" onClick={next} aria-busy={saving} disabled={saving}>
-        <span>Continue</span>
-        <ArrowRightIcon size={18} strokeWidth={2.4} />
+      <Button tone="lime" size="big" className={cn("relative w-full", going && "busy")} onClick={next} aria-busy={going} aria-disabled={going}>
+        <span className="lbl idleL">
+          <span>Continue</span>
+          <ArrowRightIcon size={18} strokeWidth={2.4} />
+        </span>
+        <span className="lbl busyL" aria-hidden={!going}>
+          <span className="spin" aria-hidden="true" />
+          <span>Saving…</span>
+        </span>
+        <span className="invisible">Continue</span>
       </Button>
     </OnboardingShell>
   );
