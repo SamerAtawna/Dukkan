@@ -19,6 +19,7 @@ export const POST = handler(async (req: Request) => {
   const agent = body.agent ?? req.headers.get("x-agent");
   const shop = await getShop();
   if (!shop.open) throw badRequest("The shop is closed right now");
+  if (!shop.paypalEmail) throw badRequest("This shop has not connected PayPal yet, so it cannot take payments");
 
   const items: OrderItem[] = [];
   for (const line of body.items) {
@@ -33,6 +34,8 @@ export const POST = handler(async (req: Request) => {
   const pp = await createOrder({
     customId: order.id,
     brand: shop.name,
+    // Pay the account the seller connected with Log in with PayPal (an email; older rows may hold a label).
+    payeeEmail: shop.paypalEmail?.includes("@") ? shop.paypalEmail : null,
     items: items.map((i) => ({ sku: i.productId, name: i.title, quantity: i.qty, unitPrice: i.unitPrice })),
     returnUrl: `${payUrl}&return=1`,
     cancelUrl: `${payUrl}&cancel=1`,

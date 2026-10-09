@@ -8,7 +8,9 @@ const Patch = z.object({
   name: z.string().min(1).max(60).optional(),
   lang: z.enum(["ar", "he", "en"]).optional(),
   open: z.boolean().optional(),
-  paypalEmail: z.string().email().nullable().optional(),
+  // Only null (Disconnect). Connecting happens through Log in with PayPal (/api/paypal/login),
+  // so nobody can point payments at an account they have not signed in to.
+  paypalEmail: z.null().optional(),
   onboarded: z.boolean().optional(),
   notifyPaid: z.boolean().optional(),
   notifyNoMatch: z.boolean().optional(),

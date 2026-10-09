@@ -15,6 +15,7 @@ Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
 | Voice note → transcript | Browser `MediaRecorder` → `POST /api/transcribe` → Gemini reads the audio |
 | Transcript + photos → English listing | `POST /api/listing` → Claude, structured output. Anything the AI inferred is kept apart as "Added by AI" |
 | Agent-facing catalogue | `GET /api/catalog?q=` and `GET /api/catalog/[id]`. Every query is logged so the seller sees what agents wanted |
+| Seller connects PayPal | Onboarding's "Connect PayPal" is Log in with PayPal: the seller signs in on PayPal's own page, `/api/paypal/callback` reads the account's email and id, and every order names that account as the payee. Dukkan never sees a PayPal password |
 | Cart → PayPal order | `POST /api/checkout` → PayPal Orders v2 `createOrder` through the official [PayPal Server SDK](https://www.npmjs.com/package/@paypal/paypal-server-sdk) (sandbox), our order id carried as `custom_id` |
 | Buyer pays | `/pay/[id]` renders the PayPal JS SDK v6 button; on approval `POST /api/checkout/[id]/capture` captures the order (Server SDK `captureOrder`, idempotent with `PayPal-Request-Id`) and records buyer name and shipping address |
 | Seller ships | `PATCH /api/orders/[id]` marks shipped and pushes the tracking number to PayPal (Server SDK `createOrderTracking`, Orders v2 `/track`) |
@@ -37,6 +38,12 @@ The hosted app is open on purpose so judges can try the seller side without a ke
    - Password: `6hKS@r)I`
 
 4. Back in the seller app the order appears as paid. Open it and add a tracking number; it is pushed to PayPal.
+5. To see the seller's side of PayPal, open https://dukkan-eight.vercel.app/onboarding/paypal, press **Disconnect PayPal** if it shows connected, then **Connect PayPal** and sign in on PayPal's page with the **sandbox seller** account:
+
+   - Email: `sb-przf353155368@business.example.com`
+   - Password: `SANDBOX_SELLER_PASSWORD`
+
+   Orders then pay that account. Please connect this account rather than another one: refunds and tracking are only tested for it.
 
 Any PayPal sandbox *personal* account works too, if you have your own.
 
@@ -115,6 +122,6 @@ npm run build
 
 ## Scope notes
 
-One seller per deployment: the app's PayPal sandbox app is the seller's account, and "Connect PayPal" on onboarding verifies those credentials with a real OAuth call. A multi-seller Dukkan would onboard each seller through PayPal's Partner Referrals API. Payment approval stays with the human buyer, as it does in Perplexity and Copilot today; the agent builds the cart and hands over the PayPal link.
+One seller per deployment. The seller connects their own PayPal account with Log in with PayPal, and orders pay that account. Refunds and tracking are tested for the sandbox seller account that owns the PayPal app; for a seller who is not the app owner, PayPal would also need that seller to grant third-party permissions (or Partner Referrals onboarding), which this demo does not do. Log in with PayPal only returns to the registered `https` URL, so the connect step is tried on the hosted app, not on localhost. Payment approval stays with the human buyer, as it does in Perplexity and Copilot today; the agent builds the cart and hands over the PayPal link.
 
 Licence: MIT, see [`LICENSE`](LICENSE).

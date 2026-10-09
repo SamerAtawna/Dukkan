@@ -99,6 +99,8 @@ export type ShopRow = {
   lang: "ar" | "he" | "en";
   open: boolean;
   paypal_email: string | null;
+  paypal_account_id: string | null;
+  paypal_connected_at: string | null;
   onboarded: boolean;
   notify_paid: boolean;
   notify_nomatch: boolean;

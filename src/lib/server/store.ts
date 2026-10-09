@@ -34,12 +34,36 @@ export async function getShop(): Promise<Shop> {
   return mapShop(data);
 }
 
+/** The seller signed in on PayPal's page: their account is now the one every order pays. */
+export async function connectPayPal(account: { email: string; accountId: string | null }): Promise<Shop> {
+  const { data, error } = await db()
+    .from("shop")
+    .update({
+      paypal_email: account.email,
+      paypal_account_id: account.accountId,
+      paypal_connected_at: new Date().toISOString(),
+      onboarded: true,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", 1)
+    .select("*")
+    .single<ShopRow>();
+  if (error) fail("connectPayPal", error);
+  return mapShop(data);
+}
+
 export async function updateShop(patch: Partial<Shop>): Promise<Shop> {
   const row: Partial<ShopRow> = {};
   if (patch.name !== undefined) row.name = patch.name;
   if (patch.lang !== undefined) row.lang = patch.lang;
   if (patch.open !== undefined) row.open = patch.open;
-  if (patch.paypalEmail !== undefined) row.paypal_email = patch.paypalEmail;
+  if (patch.paypalEmail !== undefined) {
+    row.paypal_email = patch.paypalEmail;
+    if (patch.paypalEmail === null) {
+      row.paypal_account_id = null;
+      row.paypal_connected_at = null;
+    }
+  }
   if (patch.onboarded !== undefined) row.onboarded = patch.onboarded;
   if (patch.notifyPaid !== undefined) row.notify_paid = patch.notifyPaid;
   if (patch.notifyNoMatch !== undefined) row.notify_nomatch = patch.notifyNoMatch;

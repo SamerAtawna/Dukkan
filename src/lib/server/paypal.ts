@@ -98,9 +98,67 @@ async function run<T>(what: string, call: () => Promise<{ result: T }>): Promise
 }
 
 /** True when the configured client id and secret can get a token. Used by onboarding. */
-export async function verifyCredentials(): Promise<boolean> {
-  await run("token", async () => ({ result: await paypal().clientCredentialsAuthManager.fetchToken() }));
-  return true;
+/* ------------------------- Log in with PayPal (seller connect) ------------------------- */
+// Identity is not part of the PayPal Server SDK, so these two calls use fetch directly.
+// https://developer.paypal.com/docs/log-in-with-paypal/integrate/
+
+/** One-time state for the sign-in round trip (HttpOnly cookie, scoped to /api/paypal). */
+export const PAYPAL_STATE_COOKIE = "dk_pp_state";
+
+const live = () => process.env.PAYPAL_ENV === "live";
+const webBase = () => (live() ? "https://www.paypal.com" : "https://www.sandbox.paypal.com");
+const apiBase = () => (live() ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com");
+
+function appCredentials() {
+  const id = process.env.PAYPAL_CLIENT_ID;
+  const secret = process.env.PAYPAL_CLIENT_SECRET;
+  if (!id || !secret) throw new ConfigError("PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET must be set in .env.local");
+  return { id, secret };
+}
+
+/** PayPal's own sign-in page. The return URL must be registered on the app (Log in with PayPal → Manage). */
+export function sellerLoginUrl(redirectUri: string, state: string): string {
+  const u = new URL(`${webBase()}/connect`);
+  u.searchParams.set("flowEntry", "static");
+  u.searchParams.set("client_id", appCredentials().id);
+  u.searchParams.set("response_type", "code");
+  u.searchParams.set("scope", "openid email");
+  u.searchParams.set("redirect_uri", redirectUri);
+  u.searchParams.set("state", state);
+  return u.toString();
+}
+
+/** Swap the sign-in code for the account's email and id. Never sees a password. */
+export async function sellerFromCode(code: string): Promise<{ email: string; accountId: string | null }> {
+  const { id, secret } = appCredentials();
+  const tokenRes = await fetch(`${apiBase()}/v1/oauth2/token`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${id}:${secret}`).toString("base64")}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({ grant_type: "authorization_code", code }),
+    cache: "no-store",
+  });
+  const tokenText = await tokenRes.text();
+  if (!tokenRes.ok) throw new PayPalError("PayPal did not accept the sign-in code", tokenRes.status, tokenText);
+  const { access_token } = JSON.parse(tokenText) as { access_token: string };
+
+  const infoRes = await fetch(`${apiBase()}/v1/identity/oauth2/userinfo?schema=paypalv1.1`, {
+    headers: { Authorization: `Bearer ${access_token}` },
+    cache: "no-store",
+  });
+  const infoText = await infoRes.text();
+  if (!infoRes.ok) throw new PayPalError("PayPal did not share the account details", infoRes.status, infoText);
+  const info = JSON.parse(infoText) as {
+    user_id?: string;
+    payer_id?: string;
+    email?: string;
+    emails?: { value: string; primary?: boolean }[];
+  };
+  const email = info.emails?.find((e) => e.primary)?.value ?? info.emails?.[0]?.value ?? info.email;
+  if (!email) throw new PayPalError("PayPal did not share the account's email", 502, infoText);
+  return { email, accountId: info.payer_id ?? info.user_id ?? null };
 }
 
 export type PayPalOrder = Order;
@@ -126,6 +184,8 @@ export async function createOrder(opts: {
   brand: string;
   returnUrl: string;
   cancelUrl: string;
+  /** The connected seller's PayPal account; without it the app's own account is paid. */
+  payeeEmail?: string | null;
 }): Promise<{ id: string; approveUrl: string | undefined }> {
   const currency = opts.currency ?? "USD";
   const itemTotal = opts.items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
@@ -144,6 +204,7 @@ export async function createOrder(opts: {
               .join(", ")
               .slice(0, 127),
             amount: { ...money(itemTotal, currency), breakdown: { itemTotal: money(itemTotal, currency) } },
+            ...(opts.payeeEmail ? { payee: { emailAddress: opts.payeeEmail } } : {}),
             items: opts.items.map((i) => ({
               sku: i.sku,
               name: i.name.slice(0, 127),

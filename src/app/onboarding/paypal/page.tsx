@@ -2,36 +2,66 @@
 
 import "../onboarding.css";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { ArrowRightIcon, CheckIcon } from "@/components/icons";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { OnboardingShell } from "@/components/onboarding/shell";
 import { ChevronLeftIcon, PayPalMark } from "@/components/onboarding/icons";
 import { cn } from "@/lib/cn";
-import { api, ApiError } from "@/lib/api";
 import { useShop } from "@/lib/store";
 
 type Stage = "idle" | "busy" | "done";
 
-/** The card flip is 1.4s in the design; the real call usually returns sooner, so we hold the beat. */
-const MIN_BUSY_MS = 1400;
+/** Back from PayPal: hold the shimmer this long before the card flips, so the flip reads as the result. */
+const RETURN_BEAT_MS = 700;
+
+const RETURN_ERRORS: Record<string, string> = {
+  cancelled: "You left PayPal before connecting. Nothing changed.",
+  error: "PayPal could not connect that account. Try again.",
+};
 
 /**
  * Step 2: connect PayPal. idle → busy (label cross-fade, spinner, card shimmers) → done (card flips
  * to its PayPal-navy back, lifts, sheen, check pings). The card is dealt onto the table on entry.
- * Behind it: POST /api/paypal/connect, a real sandbox OAuth call that records the account on the shop.
+ * Behind it: Log in with PayPal. The button opens PayPal's own sign-in (/api/paypal/login); PayPal
+ * returns to /api/paypal/callback, which saves the account and lands here with ?paypal=connected,
+ * where the card is still shimmering and then flips. Orders then pay the connected account.
  */
 export default function PaypalPage() {
+  return (
+    <Suspense fallback={null}>
+      <PaypalStep />
+    </Suspense>
+  );
+}
+
+function PaypalStep() {
+  const router = useRouter();
+  const returned = useSearchParams().get("paypal");
   const paypalEmail = useShop((s) => s.paypalEmail);
   const loaded = useShop((s) => s.loaded);
   const load = useShop((s) => s.load);
-  const [localStage, setStage] = useState<Stage>("idle");
-  const [error, setError] = useState<string | null>(null);
+  const [localStage, setStage] = useState<Stage>(() => (returned === "connected" ? "busy" : "idle"));
+  const [error, setError] = useState<string | null>(() => (returned ? (RETURN_ERRORS[returned] ?? null) : null));
   const [disconnecting, setDisconnecting] = useState(false);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Back from PayPal: once the saved account is in, flip the card and drop the query (no replay on refresh).
+  useEffect(() => {
+    if (!returned || (returned === "connected" && !(loaded && paypalEmail))) return;
+    const t = setTimeout(
+      () => {
+        if (returned === "connected") setStage("done");
+        router.replace("/onboarding/paypal", { scroll: false });
+      },
+      returned === "connected" ? RETURN_BEAT_MS : 0
+    );
+    return () => clearTimeout(t);
+  }, [returned, loaded, paypalEmail, router]);
 
   // Already connected on an earlier visit: the card sits on its "done" face from the start.
   const stage: Stage = loaded && paypalEmail && localStage !== "busy" ? "done" : localStage;
@@ -43,24 +73,14 @@ export default function PaypalPage() {
   const [cold] = useState(() => !useShop.getState().loaded);
   const settled = on && localStage === "idle";
 
-  async function connect() {
+  /** To PayPal's sign-in page. The card shimmers while the browser leaves. */
+  function connect() {
     if (busy || on) return;
     setStage("busy");
     setError(null);
-    const started = Date.now();
-    try {
-      const res = await api.post<{ connected: boolean; email: string | null }>("/api/paypal/connect", {});
-      await new Promise((r) => setTimeout(r, Math.max(0, MIN_BUSY_MS - (Date.now() - started))));
-      useShop.setState({ paypalEmail: res.email, onboarded: true });
-      setStage("done");
-    } catch (err) {
-      setStage("idle");
-      setError(
-        err instanceof ApiError && err.notConfigured
-          ? "PayPal keys are missing. Add PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET to .env.local."
-          : "PayPal did not accept the sandbox credentials. Check .env.local and try again."
-      );
-    }
+    // A full navigation on purpose: the route redirects off-site to PayPal, which router.push cannot follow.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.assign("/api/paypal/login");
   }
 
   /** Back to "Not connected": the card flips to its front again. Useful when re-recording the demo. */
@@ -159,7 +179,7 @@ export default function PaypalPage() {
           <span className="lbl idleL">Connect PayPal</span>
           <span className="lbl busyL" aria-hidden={!busy}>
             <span className="spin" aria-hidden="true" />
-            <span>Opening PayPal…</span>
+            <span>{returned === "connected" ? "Connecting…" : "Opening PayPal…"}</span>
           </span>
           <span className="invisible">Opening PayPal…</span>
         </Button>
@@ -178,9 +198,10 @@ export default function PaypalPage() {
           {disconnecting ? "Disconnecting…" : "Disconnect PayPal"}
         </button>
       ) : (
-        <Link href="/onboarding/open" className={cn("ob-later later", cold && "fade")}>
+        // No "Do this later": a shop cannot sell without PayPal (PayPalGate sends sellers back here).
+        <span className="ob-later later invisible" aria-hidden="true">
           Do this later
-        </Link>
+        </span>
       )}
     </OnboardingShell>
   );

@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Unbounded, JetBrains_Mono } from "next/font/google";
 import localFont from "next/font/local";
+import { Suspense } from "react";
 import { Toaster } from "sonner";
+import { PayPalGate } from "@/components/paypal-gate";
 import "./globals.css";
 
 const unbounded = Unbounded({
@@ -47,6 +49,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         {children}
+        <Suspense fallback={null}>
+          <PayPalGate />
+        </Suspense>
         <Toaster
           position="bottom-center"
           offset={88}

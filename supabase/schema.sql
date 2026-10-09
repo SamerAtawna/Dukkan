@@ -8,6 +8,8 @@ create table if not exists public.shop (
   lang          text not null default 'ar' check (lang in ('ar','he','en')),
   open          boolean not null default true,
   paypal_email  text,
+  paypal_account_id text,          -- from Log in with PayPal (userinfo user_id / payer_id)
+  paypal_connected_at timestamptz,
   onboarded     boolean not null default false,
   notify_paid   boolean not null default true,
   notify_nomatch boolean not null default true,
