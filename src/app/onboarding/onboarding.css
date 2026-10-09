@@ -19,6 +19,10 @@
     /* Onboard3: the headline waits for the shop to light up. */
     &.ob-3 .d1 { animation-delay: 0.5s; } &.ob-3 .d2 { animation-delay: 0.54s; } &.ob-3 .d3 { animation-delay: 0.58s; } &.ob-3 .d4 { animation-delay: 0.62s; }
     .fade { animation: ob-fadeonly 0.2s var(--ease-out) both; }
+    /* Onboard1 answers wait for the saved shop (paused at opacity 0), then reveal; if the data came
+       after the design's delay, restart the stagger from 0 rather than adding the delay on top. */
+    .in.ob-hold { animation-play-state: paused; }
+    &.ob-1 .in.ob-late.i2 { animation-delay: 0s; } &.ob-1 .in.ob-late.i3 { animation-delay: 0.06s; }
 
     /* Setup progress bar. */
     .steps { display: flex; gap: 6px; }
@@ -124,6 +128,8 @@
 
     @media (prefers-reduced-motion: reduce) {
       .w, .in, .ob-pill { animation: none; opacity: 1; transform: none; }
+      .in.ob-hold { opacity: 0; }
+      .in.ob-late:not(.ob-hold) { animation: ob-fadeonly 0.2s var(--ease-out) both; }
       .scene, .scene.nudge .shop-sign, .scene.nudge .bot, .scene.nudge .eye { animation: none; }
       &.ob-3 .a3 .agIn, &.ob-3 .a3 .agsh { animation: none; opacity: 1; }
       .lift.on, .lift.on .ground, .flip, .flip.busy .frontS .sheen, .flip.on .backS .sheen, .on .check::after { animation: none; }

@@ -1,7 +1,7 @@
 "use client";
 
 import "../onboarding.css";
-import { useEffect, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRightIcon } from "@/components/icons";
 import { cn } from "@/lib/cn";
@@ -21,6 +21,10 @@ export default function WelcomePage() {
   const hydrated = useOnboarding((s) => s.hydrated);
   const commit = useOnboarding((s) => s.commit);
   const [going, startGoing] = useTransition();
+  // Hold the answers' reveal until the saved name and language are in, so they fade up already
+  // filled instead of popping in a second later. Only on a cold visit; Back from step 2 is instant.
+  const [cold] = useState(() => !useOnboarding.getState().hydrated);
+  const hold = cn(!hydrated && "ob-hold", cold && "ob-late");
 
   useEffect(() => {
     void hydrate();
@@ -49,7 +53,7 @@ export default function WelcomePage() {
         You add products by talking. Agents find them, pay with PayPal, and you ship. Two questions to start.
       </p>
 
-      <div className="in i2 flex flex-col gap-2">
+      <div className={cn("in i2 flex flex-col gap-2", hold)}>
         <label className="mono" htmlFor="shop">
           Your shop&apos;s name
         </label>
@@ -65,7 +69,7 @@ export default function WelcomePage() {
         />
       </div>
 
-      <div className="in i3 flex flex-col gap-2">
+      <div className={cn("in i3 flex flex-col gap-2", hold)}>
         <div className="mono" id="lang-label">
           The language you speak
         </div>
