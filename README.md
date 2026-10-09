@@ -40,8 +40,8 @@ The hosted app is open on purpose so judges can try the seller side without a ke
 4. Back in the seller app the order appears as paid. Open it and add a tracking number; it is pushed to PayPal.
 5. To see the seller's side of PayPal, open https://dukkan-eight.vercel.app/onboarding/paypal, press **Disconnect PayPal** if it shows connected, then **Connect PayPal** and sign in on PayPal's page with the **sandbox seller** account:
 
-   - Email: `sb-przf353155368@business.example.com`
-   - Password: `SANDBOX_SELLER_PASSWORD`
+   - Email: `sb-mh543b53260758@business.example.com`
+   - Password: `ED^B6fzU`
 
    Orders then pay that account. Please connect this account rather than another one: refunds and tracking are only tested for it.
 

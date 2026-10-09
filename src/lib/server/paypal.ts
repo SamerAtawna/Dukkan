@@ -143,12 +143,12 @@ export async function sellerFromCode(code: string): Promise<{ email: string; acc
   });
   const tokenText = await tokenRes.text();
   if (!tokenRes.ok) throw new PayPalError("PayPal did not accept the sign-in code", tokenRes.status, tokenText);
-  const token = JSON.parse(tokenText) as { access_token: string; scope?: string; id_token?: string };
-  // Which attributes PayPal actually granted; the sandbox app's "Advanced options" decide this.
-  console.log("[paypal connect] token scope:", token.scope, "id_token:", Boolean(token.id_token));
+  const token = JSON.parse(tokenText) as { access_token: string };
 
-  // PayPal documents two user-info paths; the integration guide's oauth2 one has answered 400
-  // "Unable to fetch details to serve the request" in the sandbox, so try the OpenID one too.
+  // PayPal documents two user-info paths; try the OpenID one when the oauth2 one refuses. Both refuse
+  // the account that owns the app: it gets the app's own first-party token (merchant scopes, no
+  // id_token), and user info has no profile to serve for it (400 "Unable to fetch details", then 401).
+  // The seller has to be a different account from the app owner (verified in the sandbox, 10 Oct 2026).
   const urls = [
     `${apiBase()}/v1/identity/oauth2/userinfo?schema=paypalv1.1`,
     `${apiBase()}/v1/identity/openidconnect/userinfo?schema=openid`,
@@ -168,24 +168,12 @@ export async function sellerFromCode(code: string): Promise<{ email: string; acc
     console.error("[paypal connect] no email in", url, infoText);
   }
 
-  // Last resort: the ID token is a JWT whose claims may carry the email and subject.
-  if (token.id_token) {
-    try {
-      const claims = JSON.parse(Buffer.from(token.id_token.split(".")[1], "base64url").toString()) as UserInfo;
-      console.log("[paypal connect] id_token claims:", Object.keys(claims).join(","));
-      const account = accountFrom(claims);
-      if (account) return account;
-    } catch (err) {
-      console.error("[paypal connect] id_token unreadable", err);
-    }
-  }
   throw failure ?? new PayPalError("PayPal did not share the account details", 502, "");
 }
 
 type UserInfo = {
   user_id?: string;
   payer_id?: string;
-  sub?: string;
   email?: string;
   emails?: { value: string; primary?: boolean }[];
 };
@@ -193,7 +181,7 @@ type UserInfo = {
 function accountFrom(info: UserInfo): { email: string; accountId: string | null } | null {
   const email = info.emails?.find((e) => e.primary)?.value ?? info.emails?.[0]?.value ?? info.email;
   if (!email) return null;
-  return { email, accountId: info.payer_id ?? info.user_id ?? info.sub ?? null };
+  return { email, accountId: info.payer_id ?? info.user_id ?? null };
 }
 
 export type PayPalOrder = Order;
