@@ -27,7 +27,7 @@ export default function UnlockPage() {
       setError("That key did not match.");
       return;
     }
-    router.replace("/");
+    router.replace(sameOriginPath(new URLSearchParams(window.location.search).get("next")));
   }
 
   return (
@@ -64,4 +64,18 @@ export default function UnlockPage() {
       </main>
     </div>
   );
+}
+
+/**
+ * Back to the seller page that sent us here (?next= from the proxy). Resolved with the URL
+ * parser and kept only when it stays on this origin, so `//evil.com` or `/	/evil.com` go home.
+ */
+function sameOriginPath(raw: string | null): string {
+  if (!raw) return "/";
+  try {
+    const u = new URL(raw, window.location.origin);
+    return u.origin === window.location.origin ? u.pathname + u.search + u.hash : "/";
+  } catch {
+    return "/";
+  }
 }
