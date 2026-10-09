@@ -42,6 +42,16 @@ export function ArrowRightIcon(p: IconProps) {
   );
 }
 
+/** "Opens somewhere else" (a new tab). */
+export function ArrowUpRightIcon(p: IconProps) {
+  return (
+    <Svg strokeWidth={2.2} {...p}>
+      <path d="M7 17 17 7" />
+      <path d="M8 7h9v9" />
+    </Svg>
+  );
+}
+
 export function ArrowLeftIcon(p: IconProps) {
   return (
     <Svg strokeWidth={2.2} {...p}>

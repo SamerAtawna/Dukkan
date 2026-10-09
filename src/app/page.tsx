@@ -14,6 +14,7 @@ import { Headline } from "@/components/home/headline";
 import { StatusSwitch } from "@/components/home/status-switch";
 import { CommandBar } from "@/components/home/command-bar";
 import { LatestList } from "@/components/home/latest-list";
+import { ArrowUpRightIcon } from "@/components/icons";
 import { ButtonLink } from "@/components/ui/button";
 import { TabBar } from "@/components/nav/tab-bar";
 import { TopNav } from "@/components/nav/top-nav";
@@ -147,6 +148,13 @@ function Home() {
         </div>
 
         <LatestList events={feed?.events ?? []} newPaidId={newPaidId} />
+
+        {/* Demo only: the buyer side in a new tab, so a sale can be watched landing here. */}
+        <a href="/agent" target="_blank" rel="noopener" className="demo-agent">
+          <span className="mono">Demo · Be the buyer&apos;s AI agent</span>
+          <ArrowUpRightIcon size={14} />
+          <span className="sr-only">(opens in a new tab)</span>
+        </a>
 
         <TabBar className="md:hidden" />
       </main>

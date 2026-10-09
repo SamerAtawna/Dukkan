@@ -184,6 +184,20 @@
 @keyframes slidein { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: none; } }
 .flash { border-radius: 6px; padding: 0 4px; margin: 0 -4px; animation: flash 1.2s var(--ease-out) 0.25s 1; }
 @keyframes flash { 0% { background: var(--color-lime); } 100% { background: transparent; } }
+/* Demo link under Latest: opens the buyer agent in a new tab, so both sides of a sale are on screen.
+   Static on purpose (Home is seen many times a day); only press and hover feedback move. */
+.demo-agent {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 2px;
+  color: var(--color-text-2); text-decoration: none;
+  transition: transform 160ms var(--ease-out), color 160ms ease;
+}
+.demo-agent svg { flex: none; transition: transform 160ms var(--ease-out); }
+.demo-agent .mono { color: inherit; }
+.demo-agent:active { transform: scale(0.97); }
+@media (hover: hover) and (pointer: fine) {
+  .demo-agent:hover { color: var(--color-text); }
+  .demo-agent:hover svg { transform: translate(2px, -2px); }
+}
 
 /* ---------- Miniature storefront and orbiting agents ---------- */
 .scene {
@@ -417,6 +431,8 @@
   .scene.off .orbit .bot { transform: rotateY(24deg) rotateX(16deg); }
   .stage3d, .tiltX { transition: none; }
   .ev1 { animation: fadein 0.2s var(--ease-out) both; }
+  .demo-agent, .demo-agent svg { transition: color 160ms ease; }
+  .demo-agent:active, .demo-agent:hover svg { transform: none; }
   .num { transition: opacity 200ms var(--ease-out); }
   .dot::before, .mic.breathe::after, .sh::after { animation: none; opacity: 0; }
   .in { animation: fadein 0.2s var(--ease-out) both; }
