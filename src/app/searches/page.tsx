@@ -8,6 +8,7 @@ import { TabBar } from "@/components/nav/tab-bar";
 import { BackLink } from "@/components/nav/back-link";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { SearchRow } from "@/components/searches/search-row";
+import { ShopLoader } from "@/components/scene/shop-loader";
 import "./searches.css";
 
 /** `/searches`: what agents asked the shop for this week, straight from the catalogue log. */
@@ -27,7 +28,7 @@ export default function SearchesPage() {
     ? `${report.period} · ${report.total} ${report.total === 1 ? "search" : "searches"} · ${report.found} found something`
     : failed
       ? "Could not load searches"
-      : "Loading…";
+      : " ";
   const insight = report?.insight && !dismissed ? report.insight : null;
 
   return (
@@ -74,7 +75,9 @@ export default function SearchesPage() {
           <div className="card rounded-[22px] px-[18px] py-5 text-[0.9375rem] leading-normal text-text-2">
             No agent has searched your shop this week. Every search lands here the moment it happens.
           </div>
-        ) : null}
+        ) : failed ? null : (
+          <ShopLoader label="Reading what agents asked for…" />
+        )}
 
         <div className="flex-1" />
         <div className="px-1 text-[0.8125rem] leading-normal text-text-2">

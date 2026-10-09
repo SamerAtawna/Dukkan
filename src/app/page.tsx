@@ -8,6 +8,7 @@ import { useShop } from "@/lib/store";
 import { hasProducts, useProducts } from "@/lib/store-products";
 import { formatPrice, type HomeFeed } from "@/lib/types";
 import { HomeEmpty } from "@/components/home/home-empty";
+import { ShopLoader } from "@/components/scene/shop-loader";
 import { Hero3D } from "@/components/home/hero-3d";
 import { Headline } from "@/components/home/headline";
 import { StatusSwitch } from "@/components/home/status-switch";
@@ -95,7 +96,12 @@ function Home() {
 
   const three = agents === 3;
 
-  if (!shopLoaded || !productsLoaded) return <div className="min-h-dvh bg-ground" />;
+  if (!shopLoaded || !productsLoaded)
+    return (
+      <div className="min-h-dvh bg-ground">
+        <ShopLoader page label="Opening your shop…" />
+      </div>
+    );
 
   // First run: no products yet (HomeEmpty.dc.html).
   if (!anyProducts) return <HomeEmpty />;

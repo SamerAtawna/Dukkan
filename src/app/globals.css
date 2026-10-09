@@ -382,6 +382,27 @@
 .col { width: 100%; max-width: 720px; margin: 0 auto; box-sizing: border-box; padding: 28px 24px 24px; display: flex; flex-direction: column; gap: 16px; }
 @media (min-width: 768px) { .col { padding: 40px 24px 64px; gap: 24px; } }
 
+/* ---------- Shop loader (components/scene/shop-loader.tsx) ----------
+   The hero storefront in miniature while a screen waits on data. Hidden for the first 300ms so a
+   fast load never flashes it, then a 200ms fade. The scene's own entrance (pedestal, shop rising,
+   agent gliding in, bubble pop) is re-timed to start once it is visible; the bubble's dots then
+   pulse in sequence for as long as the loader is mounted (a loop only while loading is true). */
+.shop-loader { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 0 16px; animation: fadeonly 0.2s var(--ease-out) 0.3s backwards; }
+.shop-loader.page { min-height: 70dvh; justify-content: center; }
+.shop-loader .scene { width: 100%; max-width: 300px; height: 150px; --s: 0.62; background-image: none; }
+@media (min-width: 768px) { .shop-loader .scene { height: 180px; --s: 0.78; } }
+.shop-loader .pedestal { animation-delay: 0.3s; }
+.shop-loader .contact { animation-delay: 0.4s; }
+.shop-loader .shop { animation-delay: 0.4s; }
+.shop-loader .a1 .agIn { animation: glide 0.3s var(--ease-out) 0.55s 1 backwards; }
+.shop-loader .a1 .agsh { animation: fadeonly 0.3s var(--ease-out) 0.6s backwards; }
+.shop-loader .a1 .say { --sd: 0.8s; }
+.shop-loader .say i { animation: ld-dot 1.2s ease-in-out infinite backwards; }
+.shop-loader .say i:nth-child(1) { animation-delay: 1s; }
+.shop-loader .say i:nth-child(2) { animation-delay: 1.15s; }
+.shop-loader .say i:nth-child(3) { animation-delay: 1.3s; }
+@keyframes ld-dot { 0%, 100% { opacity: 0.25; transform: none; } 40% { opacity: 1; transform: translateY(-1.5px); } }
+
 /* ---------- Reduced motion (from the files) ---------- */
 @media (prefers-reduced-motion: reduce) {
   .w { animation: none; opacity: 1; transform: none; }
@@ -399,6 +420,8 @@
   .num { transition: opacity 200ms var(--ease-out); }
   .dot::before, .mic.breathe::after, .sh::after { animation: none; opacity: 0; }
   .in { animation: fadein 0.2s var(--ease-out) both; }
+  .shop-loader .say i, .shop-loader .a1 .agIn, .shop-loader .a1 .agsh { animation: none; opacity: 1; }
+  .shop-loader .say i { transform: none; }
 }
 
 } /* @layer components */

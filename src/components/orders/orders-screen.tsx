@@ -12,6 +12,7 @@ import { BackLink } from "@/components/nav/back-link";
 import { TabBar } from "@/components/nav/tab-bar";
 import { TopNav } from "@/components/nav/top-nav";
 import { thumbFor, ThumbArtSvg, TruckIcon } from "@/components/orders/icons";
+import { ShopLoader } from "@/components/scene/shop-loader";
 
 type Tab = 0 | 1 | 2;
 
@@ -104,7 +105,9 @@ export function OrdersScreen() {
           </div>
         </MotionConfig>
 
-        {!loaded ? null : rows.length === 0 ? (
+        {!loaded ? (
+          <ShopLoader label="Loading your orders…" />
+        ) : rows.length === 0 ? (
           <EmptyPanel tab={tab} noOrders={noOrders} />
         ) : (
           <div key={tab} className="card list flex flex-col rounded-[22px] px-1.5 py-1" role="tabpanel">

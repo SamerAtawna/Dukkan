@@ -11,6 +11,7 @@ import { PlusIcon } from "@/components/products/icons";
 import { ScreenHeader } from "@/components/products/screen-header";
 import { ProductTile } from "@/components/products/product-tile";
 import { VisibilityCard } from "@/components/products/visibility-card";
+import { ShopLoader } from "@/components/scene/shop-loader";
 
 export default function ProductsPage() {
   const products = useProducts((s) => s.products);
@@ -56,26 +57,32 @@ export default function ProductsPage() {
           }
         />
 
-        <div className="g">
-          {products.map((p) => (
-            <ProductTile key={p.id} product={p} />
-          ))}
-          <Link href="/add" className="tile add item">
-            <PlusIcon />
-            <span className="text-[0.8125rem] font-medium">Add a product</span>
-          </Link>
-        </div>
+        {!loaded ? (
+          <ShopLoader label="Loading your products…" />
+        ) : (
+          <>
+            <div className="g">
+              {products.map((p) => (
+                <ProductTile key={p.id} product={p} />
+              ))}
+              <Link href="/add" className="tile add item">
+                <PlusIcon />
+                <span className="text-[0.8125rem] font-medium">Add a product</span>
+              </Link>
+            </div>
 
-        {cardProducts.map((p) => (
-          <VisibilityCard
-            key={p.id}
-            label={`${p.shortTitle} visible to agents`}
-            ariaLabel={`${p.shortTitle} visible to agents`}
-            hint={p.visible ? "Agents can find it" : "Paused · hidden from agents"}
-            checked={p.visible}
-            onToggle={() => toggle(p.id, !p.visible)}
-          />
-        ))}
+            {cardProducts.map((p) => (
+              <VisibilityCard
+                key={p.id}
+                label={`${p.shortTitle} visible to agents`}
+                ariaLabel={`${p.shortTitle} visible to agents`}
+                hint={p.visible ? "Agents can find it" : "Paused · hidden from agents"}
+                checked={p.visible}
+                onToggle={() => toggle(p.id, !p.visible)}
+              />
+            ))}
+          </>
+        )}
 
         <div className="flex-1" />
         <p className="m-0 px-1 text-[0.8125rem] leading-normal text-text-2">

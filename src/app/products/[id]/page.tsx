@@ -7,6 +7,7 @@ import { useProducts, selectProduct } from "@/lib/store-products";
 import { TopNav } from "@/components/nav/top-nav";
 import { ButtonLink } from "@/components/ui/button";
 import { ProductEditor } from "@/components/products/product-editor";
+import { ShopLoader } from "@/components/scene/shop-loader";
 
 export default function ProductEditPage() {
   return (
@@ -30,7 +31,7 @@ function EditRoute() {
     void load();
   }, [load]);
 
-  if (!product && !loaded) return null;
+  if (!product && !loaded) return <ShopLoader page label="Opening the product…" />;
 
   if (!product) {
     return (

@@ -11,6 +11,7 @@ import { CheckIcon } from "@/components/icons";
 import { PhoneHeader } from "@/components/nav/phone-header";
 import { TopNav } from "@/components/nav/top-nav";
 import { thumbFor, ThumbArtSvg, TruckIcon } from "@/components/orders/icons";
+import { ShopLoader } from "@/components/scene/shop-loader";
 import { ShipSheet } from "@/components/orders/ship-sheet";
 
 type Props = {
@@ -30,7 +31,12 @@ export function OrderScreen({ id, ship = false, forceStepChanged = false }: Prop
     void load();
   }, [load]);
 
-  if (!loaded && !order) return <div className="r-orders min-h-dvh bg-ground" />;
+  if (!loaded && !order)
+    return (
+      <div className="r-orders min-h-dvh bg-ground">
+        <ShopLoader page label="Opening the order…" />
+      </div>
+    );
 
   if (!order) {
     return (
