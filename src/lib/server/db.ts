@@ -43,7 +43,7 @@ export type ProductRow = {
   updated_at: string;
 };
 
-export type OrderStatus = "pending" | "paid" | "shipped" | "delivered" | "cancelled";
+export type OrderStatus = "pending" | "paid" | "shipped" | "delivered" | "cancelled" | "refunded";
 
 export type OrderItem = { product_id: string; title: string; qty: number; unit_price: number };
 
@@ -54,6 +54,7 @@ export type OrderRow = {
   status: OrderStatus;
   paypal_order_id: string | null;
   paypal_capture_id: string | null;
+  paypal_refund_id: string | null;
   amount: number;
   currency: string;
   items: OrderItem[];
@@ -67,6 +68,7 @@ export type OrderRow = {
   paid_at: string | null;
   shipped_at: string | null;
   delivered_at: string | null;
+  refunded_at: string | null;
   created_at: string;
 };
 

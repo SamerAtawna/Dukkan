@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/cn";
 import { formatPrice, type Order } from "@/lib/types";
+import { ApiError } from "@/lib/api";
 import { addressLines, selectOrder, stepOf, timeLabel, useOrders, whenLabel, type Carrier } from "@/lib/store-orders";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { CheckIcon } from "@/components/icons";
@@ -79,10 +80,22 @@ function OrderBody({ id, order, ship, forceStepChanged }: { id: string; order: O
   }, [ship]);
 
   const pending = order.status === "pending";
+  const refunded = order.status === "refunded";
   const shipped = order.status === "shipped" || order.status === "delivered";
-  const stepLabel = order.status === "delivered" ? "Delivered" : shipped ? "Shipped" : "Ship it";
-  const progressLabel = shipped ? "Order progress: all four steps done" : pending ? "Order progress: two of four steps done" : "Order progress: three of four steps done";
-  const paidLine = pending ? "Cart built · not paid yet" : `Paid with PayPal · ${whenLabel(order.paidAt)}`;
+  const closed = shipped || refunded;
+  const stepLabel = refunded ? "Refunded" : order.status === "delivered" ? "Delivered" : shipped ? "Shipped" : "Ship it";
+  const progressLabel = refunded
+    ? "Order progress: paid, then refunded"
+    : shipped
+      ? "Order progress: all four steps done"
+      : pending
+        ? "Order progress: two of four steps done"
+        : "Order progress: three of four steps done";
+  const paidLine = pending
+    ? "Cart built · not paid yet"
+    : refunded
+      ? `Refunded with PayPal · ${whenLabel(order.refundedAt)}`
+      : `Paid with PayPal · ${whenLabel(order.paidAt)}`;
   const thumb = thumbFor(order);
   const qty = order.items.reduce((s, i) => s + i.qty, 0);
   const itemsLine = `${qty} ${qty === 1 ? "item" : "items"}`;
@@ -122,7 +135,7 @@ function OrderBody({ id, order, ship, forceStepChanged }: { id: string; order: O
     }
   }
 
-  const cta = pending ? null : shipped ? (
+  const cta = pending || refunded ? null : shipped ? (
     ship ? (
       <ButtonLink href="/" tone="lime" size="big" className="done-cta w-full md:w-auto">
         Done
@@ -144,7 +157,7 @@ function OrderBody({ id, order, ship, forceStepChanged }: { id: string; order: O
     <div ref={rootRef} className="r-orders flex min-h-dvh flex-col bg-ground text-text">
       <TopNav className="hidden md:flex" backHref="/orders" backLabel="Back to orders" active="/orders" />
 
-      <main className={cn("col flex-1 gap-[18px] md:gap-6", !animateProgress && "settled", shipped && "shipped")}>
+      <main className={cn("col flex-1 gap-[18px] md:gap-6", !animateProgress && "settled", closed && "shipped")}>
         <div className="md:hidden">
           <PhoneHeader
             title={`Order ${order.id}`}
@@ -254,6 +267,7 @@ function OrderBody({ id, order, ship, forceStepChanged }: { id: string; order: O
               Cart built {timeLabel(order.cartBuiltAt)}
               {order.paidAt && ` · Paid ${timeLabel(order.paidAt)}`}
               {order.shippedAt && ` · Shipped ${timeLabel(order.shippedAt)}`}
+              {order.refundedAt && ` · Refunded ${timeLabel(order.refundedAt)}`}
             </div>
           </div>
         </div>
@@ -261,6 +275,7 @@ function OrderBody({ id, order, ship, forceStepChanged }: { id: string; order: O
         <div className="flex-1" />
 
         {cta && <div className="flex flex-wrap justify-end gap-3">{cta}</div>}
+        {order.status === "paid" && !ship && <RefundControl order={order} />}
       </main>
 
       {ship && (
@@ -272,6 +287,52 @@ function OrderBody({ id, order, ship, forceStepChanged }: { id: string; order: O
           container={rootRef}
         />
       )}
+    </div>
+  );
+}
+
+/**
+ * Refund a paid order before it ships: a quiet link, then an inline confirmation, because it
+ * moves money back and cannot be undone. Waits for PayPal (no optimistic state).
+ */
+function RefundControl({ order }: { order: Order }) {
+  const refund = useOrders((s) => s.refund);
+  const [stage, setStage] = useState<"idle" | "ask" | "busy">("idle");
+  const total = formatPrice(order.amount, order.currency);
+
+  async function confirm() {
+    setStage("busy");
+    try {
+      await refund(order.id);
+      toast(`Refunded ${total} · back in stock`, { id: `refund-${order.id}` });
+    } catch (err) {
+      setStage("ask");
+      toast.error(err instanceof ApiError ? err.message : "The refund did not go through. Try again.", { id: `refund-${order.id}` });
+    }
+  }
+
+  if (stage === "idle")
+    return (
+      <button type="button" className="refund-link" onClick={() => setStage("ask")}>
+        Refund the buyer
+      </button>
+    );
+
+  return (
+    <div className="q refund-ask flex flex-col gap-3 px-[18px] py-4 md:flex-row md:items-center md:px-6" role="group" aria-label="Refund this order">
+      <p className="m-0 flex-1 text-[0.9375rem] leading-normal text-text" aria-live="polite">
+        {stage === "busy"
+          ? "Refunding with PayPal…"
+          : `Refund ${total} to ${order.buyerName ?? "the buyer"} with PayPal? The item goes back into stock. This cannot be undone.`}
+      </p>
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button onClick={() => setStage("idle")} disabled={stage === "busy"}>
+          Keep the order
+        </Button>
+        <Button tone="selected" onClick={() => void confirm()} aria-busy={stage === "busy"} disabled={stage === "busy"}>
+          Refund {total}
+        </Button>
+      </div>
     </div>
   );
 }

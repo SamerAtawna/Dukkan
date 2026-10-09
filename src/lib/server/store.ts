@@ -365,6 +365,32 @@ export async function markShipped(id: string, carrier: string, tracking: string)
   return mapOrder(data, shop.lang);
 }
 
+/** Paid but not shipped yet, and refunded in PayPal: close the order and put the stock back. */
+export async function markRefunded(id: string, refundId: string): Promise<Order> {
+  const current = await getOrder(id);
+  if (current.status === "refunded") return current;
+  if (current.status !== "paid") throw badRequest(`Order ${id} is ${current.status}; only a paid order that has not shipped can be refunded`);
+  const { data, error } = await db()
+    .from("orders")
+    .update({ status: "refunded", paypal_refund_id: refundId, refunded_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("status", "paid")
+    .select("*")
+    .maybeSingle<OrderRow>();
+  if (error) fail("markRefunded", error);
+  if (!data) return getOrder(id); // refunded by a parallel request
+  for (const item of current.items) {
+    const { data: p } = await db().from("products").select("stock, sold").eq("id", item.productId).maybeSingle<{ stock: number; sold: number }>();
+    if (!p) continue;
+    await db()
+      .from("products")
+      .update({ stock: p.stock + item.qty, sold: Math.max(0, p.sold - item.qty) })
+      .eq("id", item.productId);
+  }
+  const shop = await getShop();
+  return mapOrder(data, shop.lang);
+}
+
 /** Undo from the toast: back to paid. */
 export async function unship(id: string): Promise<Order> {
   const current = await getOrder(id);
@@ -405,11 +431,13 @@ export function mapOrder(r: OrderRow, lang: SellerLang): Order {
     tracking: r.tracking,
     paypalOrderId: r.paypal_order_id,
     paypalCaptureId: r.paypal_capture_id,
+    paypalRefundId: r.paypal_refund_id,
     payToken: r.token,
     cartBuiltAt: r.cart_built_at,
     paidAt: r.paid_at,
     shippedAt: r.shipped_at,
     deliveredAt: r.delivered_at,
+    refundedAt: r.refunded_at,
     summary: orderSummary(base, lang),
     story: orderStory(base, lang),
     lang,

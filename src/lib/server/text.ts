@@ -55,6 +55,8 @@ export function orderStory(
         return `طلب ${id}: ${items}. تم الدفع ${amt} عبر PayPal ووصل إلى المشتري.`;
       case "cancelled":
         return `طلب ${id}: ${items}. أُلغي قبل الدفع.`;
+      case "refunded":
+        return `طلب ${id}: ${items}. أعدتِ ${amt} للمشتري عبر PayPal، والقطعة رجعت للمخزون.`;
     }
   }
   if (lang === "he") {
@@ -69,6 +71,8 @@ export function orderStory(
         return `הזמנה ${o.id}: ${items}. שולם ${amt} דרך PayPal והגיע לקונה.`;
       case "cancelled":
         return `הזמנה ${o.id}: ${items}. בוטלה לפני התשלום.`;
+      case "refunded":
+        return `הזמנה ${o.id}: ${items}. ${amt} הוחזרו לקונה דרך PayPal, והפריט חזר למלאי.`;
     }
   }
   switch (o.status) {
@@ -82,6 +86,8 @@ export function orderStory(
       return `Order ${o.id}: ${items}. ${amt} paid with PayPal and delivered.`;
     case "cancelled":
       return `Order ${o.id}: ${items}. Cancelled before payment.`;
+    case "refunded":
+      return `Order ${o.id}: ${items}. ${amt} refunded to the buyer with PayPal, and it is back in stock.`;
   }
 }
 
@@ -89,6 +95,12 @@ export function paidEventSummary(o: Pick<Order, "id">, lang: SellerLang): string
   if (lang === "ar") return `تم دفع الطلب ${arabicDigits(o.id)} · `;
   if (lang === "he") return `הזמנה ${o.id} שולמה · `;
   return `Order ${o.id} paid · `;
+}
+
+export function refundedEventSummary(o: Pick<Order, "id">, lang: SellerLang): string {
+  if (lang === "ar") return `أُعيد مبلغ الطلب ${arabicDigits(o.id)} · `;
+  if (lang === "he") return `הזמנה ${o.id} הוחזרה · `;
+  return `Order ${o.id} refunded · `;
 }
 
 export function cartEventSummary(o: Pick<Order, "items">, lang: SellerLang): string {

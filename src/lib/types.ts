@@ -48,7 +48,7 @@ export type NewProduct = {
   visible?: boolean;
 };
 
-export type OrderStatus = "pending" | "paid" | "shipped" | "delivered" | "cancelled";
+export type OrderStatus = "pending" | "paid" | "shipped" | "delivered" | "cancelled" | "refunded";
 
 export type OrderItem = { productId: string; title: string; qty: number; unitPrice: number };
 
@@ -76,12 +76,14 @@ export type Order = {
   tracking: string | null;
   paypalOrderId: string | null;
   paypalCaptureId: string | null;
+  paypalRefundId: string | null;
   /** Secret in the pay link (/pay/[id]?t=). */
   payToken: string;
   cartBuiltAt: string;
   paidAt: string | null;
   shippedAt: string | null;
   deliveredAt: string | null;
+  refundedAt: string | null;
   /** Seller-facing one-liner, in the seller's language. */
   summary: string;
   /** Seller-facing paragraph, in the seller's language. */

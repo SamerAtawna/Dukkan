@@ -43,9 +43,10 @@ create table if not exists public.orders (
   id               text primary key default nextval('public.order_no')::text,
   token            text not null default replace(gen_random_uuid()::text, '-', ''),  -- secret in pay links
   status           text not null default 'pending'
-                   check (status in ('pending','paid','shipped','delivered','cancelled')),
+                   check (status in ('pending','paid','shipped','delivered','cancelled','refunded')),
   paypal_order_id  text unique,
   paypal_capture_id text,
+  paypal_refund_id text,             -- set when the seller refunds before shipping
   amount           numeric(10,2) not null,
   currency         text not null default 'USD',
   items            jsonb not null,    -- [{ product_id, title, qty, unit_price }]
@@ -59,6 +60,7 @@ create table if not exists public.orders (
   paid_at          timestamptz,
   shipped_at       timestamptz,
   delivered_at     timestamptz,
+  refunded_at      timestamptz,
   created_at       timestamptz not null default now()
 );
 create index if not exists orders_status_idx on public.orders (status, created_at desc);

@@ -79,7 +79,7 @@ export async function POST(req: Request) {
       }),
       tool({
         name: "orders",
-        description: "Orders, newest first: number, status (pending cart, paid, shipped, delivered), items, amount, buyer, destination, tracking.",
+        description: "Orders, newest first: number, status (pending cart, paid, shipped, delivered, refunded), items, amount, buyer, destination, tracking.",
         inputSchema: z.object({ limit: z.number().int().min(1).max(30).optional() }),
         run: async ({ limit }) =>
           (await listOrders()).slice(0, limit ?? 12).map((o) => ({

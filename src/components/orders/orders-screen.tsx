@@ -38,12 +38,13 @@ export function OrdersScreen() {
   }, [load]);
 
   const toShip = orders.filter((o) => o.status === "paid");
-  const done = orders.filter((o) => o.status !== "paid");
-  const rows = tab === 0 ? toShip : tab === 1 ? done : [...toShip, ...done];
+  const done = orders.filter((o) => o.status === "shipped" || o.status === "delivered");
+  const refunded = orders.filter((o) => o.status === "refunded");
+  const rows = tab === 0 ? toShip : tab === 1 ? done : [...toShip, ...done, ...refunded];
   const noOrders = orders.length === 0;
   const showShipCta = (tab === 0 || tab === 2) && toShip.length > 0;
 
-  const week = orders.filter((o) => o.paidAt && now - new Date(o.paidAt).getTime() < WEEK_MS);
+  const week = orders.filter((o) => o.paidAt && o.status !== "refunded" && now - new Date(o.paidAt).getTime() < WEEK_MS);
   const weekTotal = week.reduce((s, o) => s + o.amount, 0);
 
   const tabs: { label: string }[] = [
@@ -156,6 +157,8 @@ function OrderRow({ order }: { order: Order }) {
       <span className="tag warn">Ship it</span>
     ) : order.status === "shipped" ? (
       <span className="tag ok">Shipped</span>
+    ) : order.status === "refunded" ? (
+      <span className="tag grey">Refunded</span>
     ) : (
       <span className="tag grey">Delivered</span>
     );

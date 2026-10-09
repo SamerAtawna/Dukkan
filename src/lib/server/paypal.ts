@@ -7,8 +7,10 @@ import {
   Environment,
   ItemCategory,
   OrdersController,
+  PaymentsController,
   PaypalExperienceUserAction,
   PaypalWalletContextShippingPreference,
+  RefundStatus,
   ShipmentCarrier,
 } from "@paypal/paypal-server-sdk";
 import type { Money, OAuthToken, Order } from "@paypal/paypal-server-sdk";
@@ -59,6 +61,7 @@ function paypal(): Client {
 }
 
 const orders = () => new OrdersController(paypal());
+const payments = () => new PaymentsController(paypal());
 
 export class PayPalError extends Error {
   constructor(
@@ -232,4 +235,24 @@ export function addTracking(paypalOrderId: string, captureId: string, carrier: s
       },
     })
   );
+}
+
+/**
+ * Refund a captured payment in full (Payments v2 /captures/{id}/refund). The request id is the
+ * capture's, so a repeated refund returns the same refund instead of refunding twice.
+ * PENDING counts as done: PayPal has accepted the refund and settles it on its side.
+ */
+export async function refundCapture(captureId: string, noteToPayer: string): Promise<{ id: string; status: RefundStatus | undefined }> {
+  const refund = await run("refund", () =>
+    payments().refundCapturedPayment({
+      captureId,
+      paypalRequestId: `dukkan-refund-${captureId}`,
+      prefer: "return=representation",
+      body: { noteToPayer: noteToPayer.slice(0, 255) },
+    })
+  );
+  if (!refund.id || refund.status === RefundStatus.Failed || refund.status === RefundStatus.Cancelled) {
+    throw new PayPalError(`PayPal refund ${refund.status?.toLowerCase() ?? "failed"}`, 502, JSON.stringify(refund));
+  }
+  return { id: refund.id, status: refund.status };
 }

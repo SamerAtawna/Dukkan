@@ -300,7 +300,7 @@ components:
         unitPrice: { type: number, format: double }
     OrderStatus:
       type: string
-      enum: [pending, paid, shipped, delivered, cancelled]
+      enum: [pending, paid, shipped, delivered, cancelled, refunded]
     CheckoutResult:
       type: object
       required: [orderId, paypalOrderId, total, currency, payUrl, approveUrl, items]

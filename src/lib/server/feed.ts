@@ -1,5 +1,5 @@
 import "server-only";
-import { cartEventSummary, liveEventSummary, noMatchEventSummary, paidEventSummary } from "@/lib/server/text";
+import { cartEventSummary, liveEventSummary, noMatchEventSummary, paidEventSummary, refundedEventSummary } from "@/lib/server/text";
 import { countSearchesSince, getShop, listOrders, listProducts, recentSearches } from "@/lib/server/store";
 import { formatPrice, type HomeFeed, type ShopEvent } from "@/lib/types";
 
@@ -36,10 +36,10 @@ export async function homeFeed(): Promise<HomeFeed> {
         id: `paid-${o.id}`,
         kind: "paid",
         at: o.paidAt,
-        summary: paidEventSummary(o, lang),
+        summary: o.status === "refunded" ? refundedEventSummary(o, lang) : paidEventSummary(o, lang),
         summaryLang: lang,
         amount: formatPrice(o.amount, o.currency),
-        meta: `${hhmm(o.paidAt)} · Order ${o.id} · PayPal`,
+        meta: `${hhmm(o.paidAt)} · Order ${o.id} · ${o.status === "refunded" ? "Refunded" : "PayPal"}`,
         action: o.status === "paid" ? { label: "Ship it", href: `/orders/${o.id}` } : { label: "Open", href: `/orders/${o.id}` },
       });
     } else if (o.status === "pending" && Date.now() - new Date(o.cartBuiltAt).getTime() < HOUR) {
@@ -86,7 +86,7 @@ export async function homeFeed(): Promise<HomeFeed> {
 
   events.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
 
-  const paidToday = orders.filter((o) => o.paidAt && o.paidAt >= today);
+  const paidToday = orders.filter((o) => o.paidAt && o.paidAt >= today && o.status !== "refunded");
   const latestPaid = orders.filter((o) => o.paidAt).sort((a, b) => (a.paidAt! < b.paidAt! ? 1 : -1))[0];
 
   return {

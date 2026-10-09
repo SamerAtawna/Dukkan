@@ -12,6 +12,8 @@ type OrdersState = {
   load: () => Promise<void>;
   markShipped: (id: string, shipment: { carrier: Carrier; tracking: string }) => Promise<void>;
   unship: (id: string) => Promise<void>;
+  /** Full PayPal refund of a paid, unshipped order. Not optimistic: it moves money. Throws ApiError. */
+  refund: (id: string) => Promise<Order>;
   markSeen: (id: string, step: number) => void;
 };
 
@@ -52,12 +54,17 @@ export const useOrders = create<OrdersState>((set, get) => ({
       void get().load();
     }
   },
+  refund: async (id) => {
+    const saved = await api.patch<Order>(`/api/orders/${id}`, { action: "refund" });
+    set((s) => ({ orders: s.orders.map((o) => (o.id === id ? saved : o)) }));
+    return saved;
+  },
   markSeen: (id, step) => set((s) => ({ seenStep: { ...s.seenStep, [id]: step } })),
 }));
 
-/** Progress step on the order screen: 3 = paid (ship it), 4 = shipped or delivered. */
+/** Progress step on the order screen: 3 = paid (ship it), 4 = closed (shipped, delivered or refunded). */
 export function stepOf(status: Order["status"]) {
-  return status === "shipped" || status === "delivered" ? 4 : status === "paid" ? 3 : 2;
+  return status === "shipped" || status === "delivered" || status === "refunded" ? 4 : status === "paid" ? 3 : 2;
 }
 
 /** Orders the seller acts on: paid and later. Carts still being built stay on the home feed.

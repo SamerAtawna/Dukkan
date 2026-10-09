@@ -202,7 +202,9 @@ function PayScreen() {
               <CheckIcon size={18} />
             </span>
             <div className="flex flex-col gap-0.5">
-              <span className="text-[0.9375rem] font-medium">Paid with PayPal{paidName ? ` · ${paidName}` : ""}</span>
+              <span className="text-[0.9375rem] font-medium">
+                {cart?.status === "refunded" ? "Refunded to your PayPal account" : `Paid with PayPal${paidName ? ` · ${paidName}` : ""}`}
+              </span>
               <span className="mono">
                 Order {cart?.orderId} <span className="told">· the seller has been told</span>
               </span>
