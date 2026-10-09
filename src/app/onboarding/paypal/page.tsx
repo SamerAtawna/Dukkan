@@ -38,7 +38,10 @@ export default function PaypalPage() {
 
 function PaypalStep() {
   const router = useRouter();
-  const returned = useSearchParams().get("paypal");
+  const search = useSearchParams();
+  const returned = search.get("paypal");
+  // Why the callback failed (PayPal's own error text), kept in state because the query is dropped below.
+  const [reason] = useState(() => search.get("reason"));
   const paypalEmail = useShop((s) => s.paypalEmail);
   const loaded = useShop((s) => s.loaded);
   const load = useShop((s) => s.load);
@@ -160,6 +163,7 @@ function PaypalStep() {
         <div className="q flex flex-col gap-1 px-[18px] py-3.5" role="alert">
           <div className="mono text-saffron-ink">Could not connect</div>
           <div className="text-[0.875rem] leading-normal">{error}</div>
+          {reason && <div className="mono text-[0.75rem] leading-normal break-words text-text-2">{reason}</div>}
         </div>
       )}
 

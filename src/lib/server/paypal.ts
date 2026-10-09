@@ -71,10 +71,11 @@ export class PayPalError extends Error {
   ) {
     super(message);
   }
-  /** PayPal error name, e.g. ORDER_NOT_APPROVED or ORDER_ALREADY_CAPTURED. */
+  /** PayPal error name, e.g. ORDER_NOT_APPROVED or ORDER_ALREADY_CAPTURED; identity errors use `error`. */
   get code(): string | undefined {
     try {
-      return (JSON.parse(this.body) as { name?: string }).name;
+      const b = JSON.parse(this.body) as { name?: string; error?: string; error_description?: string };
+      return b.name ?? (b.error && b.error_description ? `${b.error}, ${b.error_description}` : b.error);
     } catch {
       return undefined;
     }
@@ -142,23 +143,57 @@ export async function sellerFromCode(code: string): Promise<{ email: string; acc
   });
   const tokenText = await tokenRes.text();
   if (!tokenRes.ok) throw new PayPalError("PayPal did not accept the sign-in code", tokenRes.status, tokenText);
-  const { access_token } = JSON.parse(tokenText) as { access_token: string };
+  const token = JSON.parse(tokenText) as { access_token: string; scope?: string; id_token?: string };
+  // Which attributes PayPal actually granted; the sandbox app's "Advanced options" decide this.
+  console.log("[paypal connect] token scope:", token.scope, "id_token:", Boolean(token.id_token));
 
-  const infoRes = await fetch(`${apiBase()}/v1/identity/oauth2/userinfo?schema=paypalv1.1`, {
-    headers: { Authorization: `Bearer ${access_token}` },
-    cache: "no-store",
-  });
-  const infoText = await infoRes.text();
-  if (!infoRes.ok) throw new PayPalError("PayPal did not share the account details", infoRes.status, infoText);
-  const info = JSON.parse(infoText) as {
-    user_id?: string;
-    payer_id?: string;
-    email?: string;
-    emails?: { value: string; primary?: boolean }[];
-  };
+  // PayPal documents two user-info paths; the integration guide's oauth2 one has answered 400
+  // "Unable to fetch details to serve the request" in the sandbox, so try the OpenID one too.
+  const urls = [
+    `${apiBase()}/v1/identity/oauth2/userinfo?schema=paypalv1.1`,
+    `${apiBase()}/v1/identity/openidconnect/userinfo?schema=openid`,
+  ];
+  let failure: PayPalError | null = null;
+  for (const url of urls) {
+    const infoRes = await fetch(url, { headers: { Authorization: `Bearer ${token.access_token}` }, cache: "no-store" });
+    const infoText = await infoRes.text();
+    if (!infoRes.ok) {
+      failure = new PayPalError("PayPal did not share the account details", infoRes.status, infoText);
+      console.error("[paypal connect]", url, infoRes.status, infoText);
+      continue;
+    }
+    const account = accountFrom(JSON.parse(infoText) as UserInfo);
+    if (account) return account;
+    failure = new PayPalError("PayPal did not share the account's email", 502, infoText);
+    console.error("[paypal connect] no email in", url, infoText);
+  }
+
+  // Last resort: the ID token is a JWT whose claims may carry the email and subject.
+  if (token.id_token) {
+    try {
+      const claims = JSON.parse(Buffer.from(token.id_token.split(".")[1], "base64url").toString()) as UserInfo;
+      console.log("[paypal connect] id_token claims:", Object.keys(claims).join(","));
+      const account = accountFrom(claims);
+      if (account) return account;
+    } catch (err) {
+      console.error("[paypal connect] id_token unreadable", err);
+    }
+  }
+  throw failure ?? new PayPalError("PayPal did not share the account details", 502, "");
+}
+
+type UserInfo = {
+  user_id?: string;
+  payer_id?: string;
+  sub?: string;
+  email?: string;
+  emails?: { value: string; primary?: boolean }[];
+};
+
+function accountFrom(info: UserInfo): { email: string; accountId: string | null } | null {
   const email = info.emails?.find((e) => e.primary)?.value ?? info.emails?.[0]?.value ?? info.email;
-  if (!email) throw new PayPalError("PayPal did not share the account's email", 502, infoText);
-  return { email, accountId: info.payer_id ?? info.user_id ?? null };
+  if (!email) return null;
+  return { email, accountId: info.payer_id ?? info.user_id ?? info.sub ?? null };
 }
 
 export type PayPalOrder = Order;

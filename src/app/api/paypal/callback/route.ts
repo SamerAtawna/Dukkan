@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { unstable_rethrow } from "next/navigation";
 import { appUrl } from "@/lib/server/http";
-import { PAYPAL_STATE_COOKIE, sellerFromCode } from "@/lib/server/paypal";
+import { PAYPAL_STATE_COOKIE, PayPalError, sellerFromCode } from "@/lib/server/paypal";
 import { connectPayPal } from "@/lib/server/store";
 
 /**
@@ -11,8 +11,11 @@ import { connectPayPal } from "@/lib/server/store";
  */
 export async function GET(req: Request) {
   const params = new URL(req.url).searchParams;
-  const back = (result: "connected" | "cancelled" | "error") =>
-    Response.redirect(appUrl(req, `/onboarding/paypal?paypal=${result}`), 302);
+  const back = (result: "connected" | "cancelled" | "error", reason?: string) => {
+    const q = new URLSearchParams({ paypal: result });
+    if (reason) q.set("reason", reason.slice(0, 160));
+    return Response.redirect(appUrl(req, `/onboarding/paypal?${q}`), 302);
+  };
 
   const jar = await cookies();
   const expected = jar.get(PAYPAL_STATE_COOKIE)?.value;
@@ -20,7 +23,8 @@ export async function GET(req: Request) {
 
   if (params.get("error")) return back("cancelled");
   const code = params.get("code");
-  if (!code || !expected || params.get("state") !== expected) return back("error");
+  if (!code) return back("error", "PayPal returned without a sign-in code");
+  if (!expected || params.get("state") !== expected) return back("error", "sign-in state did not match");
 
   try {
     await connectPayPal(await sellerFromCode(code));
@@ -28,6 +32,13 @@ export async function GET(req: Request) {
   } catch (err) {
     unstable_rethrow(err);
     console.error("[paypal connect]", err);
-    return back("error");
+    // Only PayPal's short error description reaches the URL; full bodies stay in the server log.
+    const reason =
+      err instanceof PayPalError
+        ? `${err.message} (${err.status}${err.code ? `: ${err.code}` : ""})`
+        : err instanceof Error
+          ? err.message
+          : "";
+    return back("error", reason);
   }
 }
