@@ -4,8 +4,6 @@ A shop for people who will never build a website, sold to AI shopping agents ins
 
 The seller makes crafts, food or clothing at home, is on a phone, and may not read English well. They add a product by taking a photo and recording a voice note in their own language. AI writes the English listing. AI shopping agents search the catalogue, build a cart and pay through PayPal. The seller only checks, confirms and ships.
 
-Built for the [PayPal AI Hackathon](https://paypalaihackathon.devpost.com/).
-
 **Try it now:** https://dukkan-eight.vercel.app (seller app) and https://dukkan-eight.vercel.app/agent (demo buyer agent). Everything runs on the PayPal sandbox; no real money moves. See [Try the hosted demo](#try-the-hosted-demo) for the sandbox buyer login.
 
 ## What is real
@@ -28,7 +26,7 @@ Nothing on the seller side is simulated any more. The home screen polls the real
 
 ## Try the hosted demo
 
-The hosted app is open on purpose so judges can try the seller side without a key.
+The hosted app is open on purpose so anyone can try the seller side without a key.
 
 1. Open https://dukkan-eight.vercel.app (the seller app; it polls for new orders).
 2. In another window open https://dukkan-eight.vercel.app/agent, ask for an embroidered cushion and confirm. The agent returns a pay link.
@@ -106,7 +104,7 @@ Any other agent can do what the demo agent does: `curl "http://localhost:3000/ap
 
 ## Hosting it
 
-The public demo above runs without `SELLER_TOKEN` so judges can get in. For a real shop: the seller app has one seller and no accounts, so on a public deployment set `SELLER_TOKEN` to a long random string and sign in the seller's browser once at `/unlock` (the key goes in a POST body and the cookie holds only a value derived from it). Without the cookie, the seller routes answer 401; the catalogue, checkout, pay page and demo agent stay public. Pay links carry their own secret (`/pay/<id>?t=...`), so an order id alone reveals nothing. Locally, leave `SELLER_TOKEN` empty.
+The public demo above runs without `SELLER_TOKEN` so anyone can get in. For a real shop: the seller app has one seller and no accounts, so on a public deployment set `SELLER_TOKEN` to a long random string and sign in the seller's browser once at `/unlock` (the key goes in a POST body and the cookie holds only a value derived from it). Without the cookie, the seller routes answer 401; the catalogue, checkout, pay page and demo agent stay public. Pay links carry their own secret (`/pay/<id>?t=...`), so an order id alone reveals nothing. Locally, leave `SELLER_TOKEN` empty.
 
 ## Demo flags
 
