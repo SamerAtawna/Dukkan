@@ -38,6 +38,7 @@ export function Storefront({ open, sign = "dukkan", notice }: StorefrontProps) {
               <i />
             </span>
           </span>
+          <span className="doorway" />
           <span className="door">
             <span className="door-notice">{notice ?? (open ? "OPEN" : "CLOSED")}</span>
             <span className="door-handle" />
@@ -46,6 +47,7 @@ export function Storefront({ open, sign = "dukkan", notice }: StorefrontProps) {
         </div>
       </div>
       <span className="shop-step" />
+      <span className="door-light" />
       <span className="shop-planter">
         <i />
         <i />

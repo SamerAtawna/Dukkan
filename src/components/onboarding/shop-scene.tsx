@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type Ref } from "react";
 import { cn } from "@/lib/cn";
 import { Bot, Storefront, shadowAt } from "@/components/scene/storefront";
 import { useSceneTilt } from "@/components/scene/use-scene-tilt";
 
 type Props = {
+  ref?: Ref<HTMLDivElement>;
   /** Text on the sign; the wordmark while the name field is empty. */
   sign?: string;
   /** Door notice; defaults to OPEN / CLOSED from the lights. */
@@ -24,7 +25,7 @@ type Props = {
  *   - a tap bounces the sign and, on step 3, makes the bots hop
  * Lights are state: the scene starts `off` and switches on at `lightsAt`.
  */
-export function ShopScene({ sign, notice, lightsAt, agents = false, onTap }: Props) {
+export function ShopScene({ ref, sign, notice, lightsAt, agents = false, onTap }: Props) {
   const [lit, setLit] = useState(false);
   const [nudged, setNudged] = useState(false);
   const nudgeTimer = useRef<number | undefined>(undefined);
@@ -49,6 +50,7 @@ export function ShopScene({ sign, notice, lightsAt, agents = false, onTap }: Pro
 
   return (
     <div
+      ref={ref}
       className={cn("scene turn", !open && "off", tilt.turning && "grab", nudged && "nudge")}
       aria-hidden="true"
       {...tilt.sceneProps}

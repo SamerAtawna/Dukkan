@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type PointerEvent } from "react";
 import { cn } from "@/lib/cn";
 import { useShop } from "@/lib/store";
 import { CommandBar } from "@/components/home/command-bar";
@@ -9,6 +8,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { MicIcon } from "@/components/icons";
 import { TabBar } from "@/components/nav/tab-bar";
 import { TopNav } from "@/components/nav/top-nav";
+import { Hero3D } from "@/components/home/hero-3d";
 import "./home-empty.css";
 
 const steps = [
@@ -49,7 +49,7 @@ export function HomeEmpty() {
           </button>
         </div>
 
-        <EmptyScene open={open} />
+        <Hero3D open={open} third={false} agents={false} />
 
         {open ? (
           <h1 className={h1Class} key="open">
@@ -113,46 +113,3 @@ export function HomeEmpty() {
 
 const h1Class =
   "hd m-0 font-medium tracking-[-0.02em] text-[1.625rem] leading-[1.2] md:text-[clamp(1.875rem,5vw,2.75rem)] md:leading-[1.15] [text-wrap:pretty]";
-
-/** The hero scene with the shop only: no agents, no orbit, no coin. Uses the global .scene geometry. */
-function EmptyScene({ open }: { open: boolean }) {
-  const [hx, setHx] = useState(0);
-  const [vy, setVy] = useState(0);
-
-  function tilt(e: PointerEvent<HTMLDivElement>) {
-    const r = e.currentTarget.getBoundingClientRect();
-    const nx = Math.max(-2, Math.min(2, Math.round(((e.clientX - r.left) / r.width - 0.5) * 4)));
-    const ny = Math.max(-1, Math.min(1, Math.round(((e.clientY - r.top) / r.height - 0.5) * 2)));
-    if (nx !== hx) setHx(nx);
-    if (ny !== vy) setVy(ny);
-  }
-
-  return (
-    <div
-      className={cn("scene", !open && "off")}
-      aria-hidden="true"
-      onPointerMove={tilt}
-      onPointerLeave={() => {
-        setHx(0);
-        setVy(0);
-      }}
-    >
-      <div className={cn("tiltX", `vy${vy}`)}>
-        <div className={cn("stage3d", `hx${hx}`)}>
-          <div className="pedestal" />
-          <div className="contact" />
-          <span className="glow" />
-          <div className="shop">
-            <div className="face top" />
-            <div className="face right" />
-            <div className="face front">
-              <span className="awning" />
-              <span className="door" />
-              <span className="baseline" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}

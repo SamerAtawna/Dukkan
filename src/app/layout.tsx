@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import { Suspense } from "react";
 import { Toaster } from "sonner";
 import { PayPalGate } from "@/components/paypal-gate";
+import { ShopEntryProvider } from "@/components/scene/shop-entry";
 import "./globals.css";
 
 const unbounded = Unbounded({
@@ -48,7 +49,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${unbounded.variable} ${readex.variable} ${jetbrains.variable} h-full`}
     >
       <body className="min-h-full flex flex-col">
-        {children}
+        <ShopEntryProvider>{children}</ShopEntryProvider>
         <Suspense fallback={null}>
           <PayPalGate />
         </Suspense>

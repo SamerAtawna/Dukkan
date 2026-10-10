@@ -2,16 +2,21 @@
 
 import "../onboarding.css";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { MicIcon } from "@/components/icons";
 import { ButtonLink } from "@/components/ui/button";
 import { OnboardingShell } from "@/components/onboarding/shell";
 import { ShopScene } from "@/components/onboarding/shop-scene";
 import { useShop } from "@/lib/store";
 import { useProducts } from "@/lib/store-products";
+import { useShopEntry } from "@/components/scene/shop-entry";
 
 /** Step 3: first-time delight. The lights come on at 0.4s, agents arrive from 1s, then the copy and CTA reveal. */
 export default function OpenPage() {
+  const router = useRouter();
+  const scene = useRef<HTMLDivElement>(null);
+  const { entering, enter } = useShopEntry();
   const shopName = useShop((s) => s.name);
   const load = useShop((s) => s.load);
   const save = useShop((s) => s.save);
@@ -22,9 +27,10 @@ export default function OpenPage() {
   // Home waits for the shop and the products before it draws anything. Load both while the
   // celebration plays, so "Go to my shop" lands on a ready home instead of a blank screen.
   useEffect(() => {
+    router.prefetch("/");
     void load();
     void loadProducts();
-  }, [load, loadProducts]);
+  }, [load, loadProducts, router]);
   // Reaching this screen means setup is done, PayPal or not.
   useEffect(() => {
     if (loaded && !onboarded) void save({ onboarded: true, open: true });
@@ -35,7 +41,7 @@ export default function OpenPage() {
       step={3}
       phoneLead={<div className="hd text-base font-semibold tracking-[-0.01em]">{shopName || "Dukkan"}</div>}
     >
-      <ShopScene sign={shopName} agents lightsAt={400} />
+      <ShopScene ref={scene} sign={shopName} agents lightsAt={400} />
 
       <div className="card thin ob-pill inline-flex items-center gap-2 self-start rounded-full py-2 pl-2.5 pr-3">
         <span className="dot" />
@@ -57,8 +63,22 @@ export default function OpenPage() {
         <MicIcon size={20} />
         <span>Add your first product</span>
       </ButtonLink>
-      <Link href="/" className="in i3 ob-later">
-        Go to my shop
+      <Link
+        href="/"
+        className="in i3 ob-later ob-enter focus-ring"
+        aria-disabled={entering || undefined}
+        onClick={(event) => {
+          // Preserve new-tab links and instant keyboard/assistive-technology navigation.
+          if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.detail === 0) return;
+          if (!scene.current) return;
+          event.preventDefault();
+          void enter(scene.current);
+        }}
+      >
+        <span>Go to my shop</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M4 12h15m-6-6 6 6-6 6" />
+        </svg>
       </Link>
     </OnboardingShell>
   );

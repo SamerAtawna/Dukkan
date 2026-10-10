@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
 import { Bot, Storefront, shadowAt } from "@/components/scene/storefront";
 import { useSceneTilt } from "@/components/scene/use-scene-tilt";
+import { useShopEntry } from "@/components/scene/shop-entry";
+import { useShop } from "@/lib/store";
 
 /**
  * A miniature storefront built with CSS 3D. All geometry lives in globals.css under
@@ -21,13 +23,18 @@ type Props = {
   open: boolean;
   /** When true the third agent has settled and the coin drops. */
   third: boolean;
+  /** The first-run shop shares the building but has no browsing agents yet. */
+  agents?: boolean;
   className?: string;
 };
 
 const LIGHTS_AT_MS = 600;
 
-export function Hero3D({ open, third, className }: Props) {
-  const [lit, setLit] = useState(false);
+export function Hero3D({ open, third, agents = true, className }: Props) {
+  const { entering } = useShopEntry();
+  const [arrived] = useState(entering);
+  const [lit, setLit] = useState(entering);
+  const name = useShop((s) => s.name);
   const tilt = useSceneTilt({ drag: true });
 
   useEffect(() => {
@@ -39,7 +46,8 @@ export function Hero3D({ open, third, className }: Props) {
 
   return (
     <div
-      className={cn("scene turn", !on && "off", tilt.turning && "grab", className)}
+      className={cn("scene turn", !on && "off", tilt.turning && "grab", arrived && "shop-arrived", className)}
+      data-shop-hero=""
       aria-hidden="true"
       {...tilt.sceneProps}
     >
@@ -48,35 +56,39 @@ export function Hero3D({ open, third, className }: Props) {
           <div className="pedestal" />
           <div className="contact" />
           <span className="glow" />
-          <Storefront open={on} />
+          <Storefront open={on} sign={name} />
 
-          {/* Agent 1: walks in from the left and browses the window (dots bubble). */}
-          <div className="agent a1" style={{ transform: "translate3d(-92px, 24px, 56px)" }}>
-            <span className="agIn">
-              <Bot say="think" />
-            </span>
-            <span className="agsh" style={shadowAt(19)} />
-          </div>
+          {agents && (
+            <>
+              {/* Agent 1: walks in from the left and browses the window (dots bubble). */}
+              <div className="agent a1" style={{ transform: "translate3d(-92px, 24px, 56px)" }}>
+                <span className="agIn">
+                  <Bot say="think" />
+                </span>
+                <span className="agsh" style={shadowAt(19)} />
+              </div>
 
-          {/* Agent 3: arrives at 2.2s at the door and pays (check bubble + coin). */}
-          <div className={cn("agent a3", !third && "hid")} style={{ transform: "translate3d(92px, 28px, 70px)" }}>
-            <span className="agIn">
-              <Bot small say="paid" />
-            </span>
-            <span className="agsh" style={shadowAt(15)} />
-          </div>
+              {/* Agent 3: arrives at 2.2s at the door and pays (check bubble + coin). */}
+              <div className={cn("agent a3", !third && "hid")} style={{ transform: "translate3d(92px, 28px, 70px)" }}>
+                <span className="agIn">
+                  <Bot small say="paid" />
+                </span>
+                <span className="agsh" style={shadowAt(15)} />
+              </div>
 
-          {/* Agent 2: comes around the right side of the shop and settles by the side window. */}
-          <div className="orbit">
-            <div className="orbitArm">
-              <span className="ctr">
-                <Bot />
-              </span>
-              <span className="agsh" />
-            </div>
-          </div>
+              {/* Agent 2: comes around the right side and settles by the side window. */}
+              <div className="orbit">
+                <div className="orbitArm">
+                  <span className="ctr">
+                    <Bot />
+                  </span>
+                  <span className="agsh" />
+                </div>
+              </div>
 
-          <span className={cn("coin", third && "drop")} />
+              <span className={cn("coin", third && "drop")} />
+            </>
+          )}
         </div>
       </div>
     </div>
