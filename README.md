@@ -4,6 +4,8 @@ A shop for people who will never build a website, sold to AI shopping agents ins
 
 The seller makes crafts, food or clothing at home, is on a phone, and may not read English well. They add a product by taking a photo and recording a voice note in their own language. AI writes the English listing. AI shopping agents search the catalogue, build a cart and pay through PayPal. The seller only checks, confirms and ships.
 
+**Watch the demo:** https://youtu.be/6Bud7XoxLNA (2 min)
+
 **Try it now:** https://dukkan-eight.vercel.app (seller app) and https://dukkan-eight.vercel.app/agent (demo buyer agent). Everything runs on the PayPal sandbox; no real money moves. See [Try the hosted demo](#try-the-hosted-demo) for the sandbox buyer login.
 
 ## What is real

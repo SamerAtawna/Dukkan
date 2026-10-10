@@ -175,5 +175,5 @@ Or shift time inside the multi-shot: shot 3 down to 3 s, shot 4 up to 5 s.
   - Clip B: Salma still → buyer still, 5 s single shot, the prompt above. One take, keeper: out through the workshop window, city flyover, blurred street-level pass through the shop window, settles behind the buyer on the last frame.
   - Clip C: two keepers. (1) buyer still → black end frame, take 3 (takes 1 and 2 show her face reflected in the screen, delete them). (2) buyer still → agent page, the one to use for the cut into the agent demo.
 - Credits left after all of it: about 248 (after the intro clips).
-- Pending: download the keepers from Kling (download icon under each video), both Screen Studio recordings, Keynote slides, CapCut assembly (A reversed at 2x, B, last 2.5 s of C), narration.
+- Done 10 Oct 2026: CapCut assembly (2:13, no URL slide, ends on the title card), narration and soundtrack (see `narration.md`). Published: https://youtu.be/6Bud7XoxLNA
 - Claude in Chrome can drive Kling but needs the Kling window it opened to be signed in (bottom-left shows "Sign In" while signed out) and the two stills shared into the chat.
