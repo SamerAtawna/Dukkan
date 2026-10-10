@@ -1,6 +1,6 @@
 # Demo narration (ElevenLabs)
 
-Segmented to the timeline in `demo-video-plan.md`. About 330 words. Numbers and the URL are spelled out for the voice model.
+Segmented to the timeline in `demo-video-plan.md`. About 360 words. Numbers and the URL are spelled out for the voice model.
 
 ```
 [0:00 Intro, over the title]
@@ -16,11 +16,11 @@ She names her shop, picks her language, and connects her own PayPal account with
 [0:40 Add a product]
 To add a product, she takes a photo and records a voice note. Gemini transcribes it. Claude writes the English listing. Anything the AI guessed is kept apart, so she can check it. She answers one question about stock, and publishes.
 
-[1:45 The flight to the buyer]
-Her buyers are not people browsing. They are AI agents.
+[1:40 The flight to the buyer]
+Now leave Salma's shop. Across the city, in an apartment she will never see, someone wants a cushion. He is not going to browse for it. He asks his AI agent.
 
 [1:55 The agent buys]
-This agent talks to Dukkan only through the public API, the same way Perplexity or Copilot would. It searches the catalogue, builds a cart, and asks PayPal to create the order. The agent never pays by itself. It hands the human a pay link, and she approves on PayPal's own button.
+That agent talks to Dukkan only through the public API, the same way Perplexity or Copilot would. It searches the catalogue, builds a cart, and asks PayPal to create the order. The agent never pays by itself. It hands him a pay link, and he approves on PayPal's own button.
 
 [2:20 Money lands]
 Back on Salma's screen, the payment is captured and the order appears. No refresh. No dashboard. The coin drops.

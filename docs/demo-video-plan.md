@@ -29,7 +29,7 @@ Decisions made:
 - The "Ask or tell Dukkan" assistant bar is cut for time. Trade it against the Log in with PayPal beat if wanted.
 - Seller demo recorded at desktop width, since Salma's clip ends on a desktop monitor.
 
-## Narration script (~400 words)
+## Narration script (~400 words; the ElevenLabs-ready version is in `narration.md`)
 
 **Intro.** Dukkan lets someone who sells crafts from home, on a phone, in their own language, open a shop that AI shopping agents can search and buy from, with PayPal moving the money.
 
@@ -37,7 +37,9 @@ Decisions made:
 
 **Add a product.** To add a product she takes a photo and records a voice note in her own language. Gemini transcribes it, Claude writes the English listing, and anything the AI guessed is kept apart so she can check it. She answers one stock question and publishes.
 
-**An agent buys.** Her buyers are not people browsing. They are AI agents. This one talks to Dukkan only through the public API, the same way Perplexity or Copilot would. It searches the catalogue, builds a cart, and asks PayPal to create the order. The agent never pays by itself. It hands the human a pay link, and the human approves on PayPal's own button.
+**The flight to the buyer (over clip B).** Now leave Salma's shop. Across the city, in an apartment she will never see, someone wants a cushion. He is not going to browse for it. He asks his AI agent.
+
+**An agent buys.** That agent talks to Dukkan only through the public API, the same way Perplexity or Copilot would. It searches the catalogue, builds a cart, and asks PayPal to create the order. The agent never pays by itself. It hands him a pay link, and he approves on PayPal's own button.
 
 **Money lands.** Back on Salma's screen the payment is captured and the order appears. No refresh, no dashboard. The coin drops.
 
