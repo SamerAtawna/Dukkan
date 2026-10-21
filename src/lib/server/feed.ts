@@ -1,6 +1,6 @@
 import "server-only";
 import { cartEventSummary, liveEventSummary, noMatchEventSummary, paidEventSummary, refundedEventSummary } from "@/lib/server/text";
-import { countSearchesSince, getShop, listOrders, listProducts, recentSearches } from "@/lib/server/store";
+import { countSearchesSince, getShop, latestProducts, listOrders, recentSearches } from "@/lib/server/store";
 import { formatPrice, type HomeFeed, type ShopEvent } from "@/lib/types";
 
 const HOUR = 60 * 60 * 1000;
@@ -23,7 +23,7 @@ export async function homeFeed(): Promise<HomeFeed> {
   const [shop, orders, products, searches, searchesToday] = await Promise.all([
     getShop(),
     listOrders(),
-    listProducts(),
+    latestProducts(2),
     recentSearches(12),
     countSearchesSince(today),
   ]);
@@ -71,7 +71,7 @@ export async function homeFeed(): Promise<HomeFeed> {
     });
   }
 
-  for (const p of products.slice(0, 2)) {
+  for (const p of products) {
     if (!p.visible) continue;
     events.push({
       id: `live-${p.id}`,

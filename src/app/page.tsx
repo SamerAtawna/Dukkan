@@ -19,8 +19,11 @@ import { ButtonLink } from "@/components/ui/button";
 import { TabBar } from "@/components/nav/tab-bar";
 import { TopNav } from "@/components/nav/top-nav";
 
-/** How often the home screen asks for new orders and searches. */
-const POLL_MS = 4000;
+/**
+ * How often the home screen asks for new orders and searches, while the tab is visible.
+ * Was 4s: one tab left open overnight burned ~3 GB/day of Supabase egress.
+ */
+const POLL_MS = 15000;
 /** `?demo=paid` replays the design's 2.2s "order paid" beat without a real payment. */
 const DEMO_PAID_DELAY_MS = 2200;
 
@@ -57,10 +60,14 @@ function Home() {
 
   // Poll the feed. The first response sets the baseline; a later paid order is "new":
   // the count rolls 2 → 3, the coin drops and the row slides in (the design's paid beat).
+  // A hidden tab stops polling and catches up the moment it's shown again.
   useEffect(() => {
     let stop = false;
+    let busy = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const tick = async () => {
+      if (stop || busy || document.hidden) return;
+      busy = true;
       try {
         const f = await api.get<HomeFeed>("/api/home");
         if (stop) return;
@@ -75,12 +82,20 @@ function Home() {
       } catch {
         /* backend not configured: the hero still works, the list stays empty */
       }
+      busy = false;
       if (!stop) timer = setTimeout(tick, POLL_MS);
     };
+    const onVisibility = () => {
+      if (document.hidden) return;
+      if (timer) clearTimeout(timer);
+      void tick();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
     void tick();
     return () => {
       stop = true;
       if (timer) clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [setAgents, loadProducts]);
 

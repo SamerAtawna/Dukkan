@@ -98,6 +98,23 @@ export async function listProducts(): Promise<Product[]> {
   return (data as ProductRow[]).map((r) => mapProduct(r, found.get(r.id) ?? 0));
 }
 
+/** The newest listings, without photos: the home feed polls this, and photos are data URLs of 100+ KB each. */
+export async function latestProducts(limit: number) {
+  const { data, error } = await db()
+    .from("products")
+    .select("id, title, short_title, visible, created_at")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) fail("latestProducts", error);
+  return (data as Pick<ProductRow, "id" | "title" | "short_title" | "visible" | "created_at">[]).map((r) => ({
+    id: r.id,
+    title: r.title,
+    shortTitle: r.short_title,
+    visible: r.visible,
+    createdAt: r.created_at,
+  }));
+}
+
 export async function getProduct(id: string): Promise<Product> {
   const [{ data, error }, found] = await Promise.all([
     db().from("products").select("*").eq("id", id).maybeSingle<ProductRow>(),
