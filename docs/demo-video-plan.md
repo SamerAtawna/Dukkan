@@ -176,4 +176,5 @@ Or shift time inside the multi-shot: shot 3 down to 3 s, shot 4 up to 5 s.
   - Clip C: two keepers. (1) buyer still → black end frame, take 3 (takes 1 and 2 show her face reflected in the screen, delete them). (2) buyer still → agent page, the one to use for the cut into the agent demo.
 - Credits left after all of it: about 248 (after the intro clips).
 - Done 10 Oct 2026: CapCut assembly (2:13, no URL slide, ends on the title card), narration and soundtrack (see `narration.md`). Published: https://youtu.be/6Bud7XoxLNA
+- Done 5 Nov 2026: the 17 Oct cut with the 16 s motion intro in front of it (2:54, `~/Desktop/dukkan-show/dukkan-film-v5-motion-intro.mp4`). Published: https://youtu.be/p7zWdBljNdc, the link in the README.
 - Claude in Chrome can drive Kling but needs the Kling window it opened to be signed in (bottom-left shows "Sign In" while signed out) and the two stills shared into the chat.
